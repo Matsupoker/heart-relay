@@ -107,3 +107,18 @@ HEART RELAYが目指すのは、こうした情報を一か所に集め、内容
 **人間が人間に向き合い続けるために、技術で何ができるのか。**
 
 HEART RELAYは、その問いに対する一つの試みです。
+
+## 8. リポジトリ構成と開発状況（ハッカソン期間中に随時更新）
+
+```
+backend/   Node.js + Express + SQLite。Claude API 解析、配信・確認履歴の管理、PC画面の配信
+web/       PC用 Web 画面（ビルド不要の静的 SPA）
+android/   Kotlin / Jetpack Compose 製 職員向け受信アプリ
+docs/      開発計画・API契約・起動手順・参照資料
+```
+
+- 起動方法: [docs/起動手順.md](docs/起動手順.md)
+- 開発計画: [docs/plan/開発計画_第一段階.md](docs/plan/開発計画_第一段階.md)
+- API 契約: [docs/api.md](docs/api.md)
+
+本リポジトリのコードは Built with Claude: Japan 2026 の期間中（2026-11-02〜）に新規に作成しています。シードデータ・サンプル文はすべて架空です。

@@ -21,7 +21,7 @@ cd android
 ./gradlew testDebugUnitTest    # 単体テスト
 ```
 SDKの場所は環境変数 `ANDROID_HOME` か `android/local.properties`（`sdk.dir=...`）で指定します。
-出力: `app/build/outputs/apk/debug/app-debug.apk`（リポジトリ同梱コピー: `../dist/heart-relay-debug.apk`）
+出力: `app/build/outputs/apk/debug/app-debug.apk`（ビルド済み APK はリポジトリに含めず、別途配布します）
 
 ## 実機へのインストール
 - USBデバッグ有効のスマホをPCに接続し、`adb install -r dist/heart-relay-debug.apk`
