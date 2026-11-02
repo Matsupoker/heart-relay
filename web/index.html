@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HEART RELAY（仮）</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="brand">
+    <h1>HEART RELAY<span class="tmp">（仮）</span></h1>
+    <p class="subtitle">必要な情報を、必要な人に、必要な形で。</p>
+  </div>
+  <div class="header-right">
+    <span id="analyzer-badge" class="badge badge-neutral" data-testid="analyzer-badge">確認中…</span>
+    <span id="conn" class="conn conn-off" data-testid="conn-indicator"><i></i><span>接続確認中</span></span>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="col col-input" aria-labelledby="h-input">
+    <h2 id="h-input"><span class="step">1</span>新規連絡事項</h2>
+    <form id="msg-form" data-testid="msg-form">
+      <label class="field-label" for="raw-text">連絡内容</label>
+      <textarea id="raw-text" data-testid="raw-text" rows="7" placeholder="例：A様は受診のため15時までに帰宅が必要"></textarea>
+      <div class="quick" id="quick" data-testid="quick-samples"></div>
+      <div class="row2">
+        <div>
+          <label class="field-label" for="source">情報源</label>
+          <select id="source" data-testid="source">
+            <option>手入力</option><option>電話</option><option>FAX</option><option>紙メモ</option><option>ケアマネ連絡</option><option>家族連絡</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label" for="created-by">入力者</label>
+          <input id="created-by" data-testid="created-by" type="text" value="相談員 デモ">
+        </div>
+      </div>
+      <button id="submit" type="submit" class="btn btn-primary btn-lg" data-testid="submit-analyze">AIで解析する</button>
+    </form>
+  </section>
+
+  <section class="col col-proposal" aria-labelledby="h-prop">
+    <h2 id="h-prop"><span class="step">2</span>AI提案の確認</h2>
+    <div id="proposal" data-testid="proposal-panel"></div>
+  </section>
+
+  <section class="col col-status" aria-labelledby="h-status">
+    <h2 id="h-status"><span class="step">3</span>配信状況と確認状況</h2>
+    <div id="stats" class="stats" data-testid="stats"></div>
+    <div id="sent-list" data-testid="sent-list"></div>
+  </section>
+</main>
+
+<footer class="app-footer">本プロトタイプのデータはすべて架空です。</footer>
+<div id="toasts" class="toasts" aria-live="polite"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
