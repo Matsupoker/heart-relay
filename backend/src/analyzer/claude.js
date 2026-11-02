@@ -49,7 +49,8 @@ function buildUserMessage({ rawText, source, staff, residents }) {
   const roster = staff.filter((s) => s.active !== false)
     .map((s) => `- ${s.id} | ${s.name} | ${s.role} | 担当: ${s.duties.join('、') || 'なし'}`).join('\n');
   const res = residents.map((r) => `- ${r.id} | ${r.name} | ${r.notes}`).join('\n');
-  return `【職員名簿（id | 氏名 | 職種 | 当日の担当業務）】\n${roster}\n\n【利用者一覧（id | 氏名 | 備考）】\n${res}\n\n【連絡事項（入手経路: ${source || '手入力'}）】\n${rawText}`;
+  const today = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', dateStyle: 'full', timeStyle: 'short' });
+  return `【現在日時（日本時間）】${today}\n\n【職員名簿（id | 氏名 | 職種 | 当日の担当業務）】\n${roster}\n\n【利用者一覧（id | 氏名 | 備考）】\n${res}\n\n【連絡事項（入手経路: ${source || '手入力'}）】\n${rawText}`;
 }
 
 const isRetryable = (e) => e?.status >= 500 || e?.status === 529 || /overloaded/i.test(e?.message || '');
