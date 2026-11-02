@@ -1,0 +1,37 @@
+# secrets
+.env
+*.env
+!.env.example
+backend/.env
+
+# node
+node_modules/
+npm-debug.log*
+
+# data
+backend/data/*.db
+backend/data/*.db-*
+*.sqlite
+
+# android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/*.iml
+android/.kotlin/
+android/captures/
+*.apk
+!dist/*.apk
+*.aab
+*.keystore
+*.jks
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
