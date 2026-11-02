@@ -24,7 +24,7 @@ android/app/*.iml
 android/.kotlin/
 android/captures/
 *.apk
-!dist/*.apk
+dist/
 *.aab
 *.keystore
 *.jks

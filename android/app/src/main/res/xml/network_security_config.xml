@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 開発用プロトタイプ: LAN上のhttpサーバへの接続を許可 -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
