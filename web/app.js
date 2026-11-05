@@ -145,7 +145,7 @@ function setCurrent(m) {
     state.recips = (a.recipients || []).map((r) => ({ ...r, checked: true }));
     state.audience = ['individual', 'board', 'both'].includes(a.audience) ? a.audience : 'individual';
     const bp = a.board_post;
-    state.board = { title: bp ? bp.title : (a.summary || ''), body: bp ? bp.body : (a.board_summary || ''), until: bp ? toLocalInput(bp.until) : '' };
+    state.board = { title: bp ? bp.title : '', body: bp ? bp.body : '', until: bp ? toLocalInput(bp.until) : '' };
   } else state.recips = [];
   renderProposal();
   if (m.status === 'proposed' || m.status === 'needs_resident' || m.status === 'failed') setTab('proposal');

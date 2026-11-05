@@ -194,6 +194,8 @@ const T = (id) => `[data-testid=${id}]`;
   const small2 = await m.evaluate(() => [...document.querySelectorAll('.col-proposal button,.col-proposal select,.col-proposal input:not([type=radio]):not([type=checkbox]),.col-proposal textarea,.aud-opt')].filter(e => e.offsetParent).map(e => ({ t: e.dataset.testid || e.id || e.className, h: Math.round(e.getBoundingClientRect().height), f: parseFloat(getComputedStyle(e).fontSize) })).filter(x => x.h < 44 || x.f < 16));
   check('(e) 提案画面: 高さ44px以上・文字16px以上', small2.length === 0, JSON.stringify(small2));
   await m.check(T('audience-both'));
+  await m.fill(T('board-title'), '掲示テスト');
+  await m.fill(T('board-body'), '掲示本文テスト');
   await m.evaluate(() => document.querySelector('[data-testid=board-edit]').scrollIntoView());
   await m.screenshot({ path: S + '24-mobile-board.png' });
   await m.click(T('btn-send'));
