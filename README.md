@@ -115,6 +115,7 @@ backend/   Node.js + Express + SQLite。Claude API 解析、配信・確認履�
 web/       PC用 Web 画面（ビルド不要の静的 SPA）
 android/   Kotlin / Jetpack Compose 製 職員向け受信アプリ
 docs/      開発計画・API契約・起動手順・参照資料
+fixtures/   架空利用者200名（HARMONIZE2互換）
 ```
 
 - 起動方法: [docs/起動手順.md](docs/起動手順.md)
