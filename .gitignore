@@ -36,3 +36,4 @@ Thumbs.db
 .idea/
 *.log
 web/dev/screenshots/
+backend/data/uploads/
