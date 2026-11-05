@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HEART RELAY 共有ボード</title>
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<header class="bh">
+  <h1>HEART RELAY <span>共有ボード</span></h1>
+  <div class="bh-right">
+    <div class="clock" id="clock" data-testid="board-clock">--:--:--</div>
+    <div class="meta">
+      <div>最終更新 <b id="updated" data-testid="board-updated">--:--:--</b></div>
+      <div id="conn" class="conn conn-off"><i></i><span>接続中…</span></div>
+    </div>
+  </div>
+</header>
+<main id="list" class="list" aria-live="polite"></main>
+<footer class="bf">
+  <span>本画面のデータはすべて架空です</span>
+  <span>個別の確認は各職員の端末で行います（この画面に確認操作はありません）</span>
+</footer>
+<script src="board.js"></script>
+</body>
+</html>
