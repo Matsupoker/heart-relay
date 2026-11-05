@@ -430,6 +430,9 @@ async function sendMessage() {
     const parts = [rs.length ? `${rs.length}名へ配信` : '', board_post ? '共有ボードに掲示' : ''].filter(Boolean).join('し、');
     state.sentNote = `${parts}しました。状況の一覧で確認状況をご覧ください。`;
     state.current = null; state.recips = [];
+    $('raw-text').value = ''; $('source').value = '手入力';
+    state.attachments = []; renderChips();
+    state.extract = null; renderIntake();
     toast(board_post && !rs.length ? '共有ボードに掲示しました' : '配信しました', 'ok');
     renderProposal(); pollOnce(); setTab('status');
   } catch (e) { toast('配信に失敗しました: ' + e.message); renderProposal(); }

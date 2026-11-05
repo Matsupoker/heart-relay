@@ -147,6 +147,7 @@ const T = (id) => `[data-testid=${id}]`;
   check('(d) /send に board_post と recipients', sb2.board_post && sb2.board_post.title === '【編集】明日午前は1号車のみ' && sb2.board_post.until.startsWith('2099-12-31T08:00') && sb2.recipients.length === 2, JSON.stringify(sb2.board_post));
   await p.waitForSelector(T('board-badge'));
   check('(d) 状況パネルに掲示中バッジ', (await p.textContent(T('board-badge'))).includes('掲示中'));
+  check('(d) 配信成功後に入力欄・チップ・抽出パネルが初期化', (await p.inputValue(T('raw-text'))) === '' && (await p.locator(T('attachment-chip')).count()) === 0 && (await p.locator(T('extract-panel')).count()) === 0 && (await p.inputValue(T('source'))) === '手入力');
   const board = await p.evaluate(() => fetch('/api/board').then(r => r.json()));
   check('(d) /api/board に掲示', board.length === 1 && board[0].title.includes('編集'));
   await p.screenshot({ path: S + '11-sent-both.png' });
