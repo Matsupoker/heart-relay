@@ -1,0 +1,4 @@
+# Preserve exact CSV bytes on every platform (BOM + CRLF, including final CRLF).
+*.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.json text eol=lf
+*.md text eol=lf

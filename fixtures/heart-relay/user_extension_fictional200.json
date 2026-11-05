@@ -1,0 +1,2985 @@
+{
+  "format": "heart-relay-user-extension",
+  "schemaVersion": 1,
+  "sourceBackup": "harmonize2_backup_fictional200.json",
+  "generatedAt": "2026-11-05T00:00:00.000Z",
+  "statusDefinitions": {
+    "serviceStatus": [
+      "利用中",
+      "中止中",
+      "終了"
+    ],
+    "attendance": [
+      "出席",
+      "欠席",
+      "対象外"
+    ]
+  },
+  "users": [
+    {
+      "id": "0001",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-21",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0006",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-19",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0007",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-21",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0013",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-05-23",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0014",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-26",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0015",
+      "serviceStatus": "終了",
+      "statusSince": "2026-10-27",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0017",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-25",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0018",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-11-03",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0019",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-01-14",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0026",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-04-09",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0028",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-12",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0029",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-11",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "2",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0030",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-02-27",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0032",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-21",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0033",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-04-02",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0035",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-04-29",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0036",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-15",
+      "weeklyPattern": [
+        "火",
+        "木",
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0037",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-04-12",
+      "weeklyPattern": [
+        "月",
+        "水",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0038",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-12-20",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0040",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-11-03",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0041",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-30",
+      "weeklyPattern": [
+        "木",
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0042",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-17",
+      "weeklyPattern": [
+        "月",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0043",
+      "serviceStatus": "終了",
+      "statusSince": "2026-06-13",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0044",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-06-13",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0045",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-02-06",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0046",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-21",
+      "weeklyPattern": [
+        "火",
+        "土"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0050",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-09-13",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0058",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-28",
+      "weeklyPattern": [
+        "月",
+        "水"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0059",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-30",
+      "weeklyPattern": [
+        "火",
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0060",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-03-27",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0062",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-21",
+      "weeklyPattern": [
+        "水",
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0064",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-04-26",
+      "weeklyPattern": [
+        "木",
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0067",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-24",
+      "weeklyPattern": [
+        "月",
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0071",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-12-16",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0073",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-29",
+      "weeklyPattern": [
+        "火",
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0074",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-23",
+      "weeklyPattern": [
+        "月",
+        "水"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0075",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-08-27",
+      "weeklyPattern": [
+        "火",
+        "木"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0076",
+      "serviceStatus": "終了",
+      "statusSince": "2025-12-12",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0079",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-11-05",
+      "weeklyPattern": [
+        "水",
+        "金"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0080",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-08",
+      "weeklyPattern": [
+        "木",
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0081",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-10-03",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0082",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-31",
+      "weeklyPattern": [
+        "月",
+        "金"
+      ],
+      "transportRoute": "3",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0087",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-28",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0088",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-03",
+      "weeklyPattern": [
+        "火",
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0089",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-21",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0090",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-25",
+      "weeklyPattern": [
+        "月",
+        "水"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0091",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-02-28",
+      "weeklyPattern": [
+        "火",
+        "木"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0096",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-01-03",
+      "weeklyPattern": [
+        "水",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0098",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-28",
+      "weeklyPattern": [
+        "木",
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0099",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-31",
+      "weeklyPattern": [
+        "月",
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0107",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-04",
+      "weeklyPattern": [
+        "火",
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0115",
+      "serviceStatus": "終了",
+      "statusSince": "2025-12-29",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0116",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-22",
+      "weeklyPattern": [
+        "月",
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0119",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-12",
+      "weeklyPattern": [
+        "火",
+        "木"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0122",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-01",
+      "weeklyPattern": [
+        "水",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0125",
+      "serviceStatus": "終了",
+      "statusSince": "2026-03-20",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0126",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-15",
+      "weeklyPattern": [
+        "木",
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0127",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-11-01",
+      "weeklyPattern": [
+        "月",
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0128",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-16",
+      "weeklyPattern": [
+        "火",
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0132",
+      "serviceStatus": "終了",
+      "statusSince": "2026-01-09",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0139",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-07",
+      "weeklyPattern": [
+        "月",
+        "水"
+      ],
+      "transportRoute": "3",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0150",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-05",
+      "weeklyPattern": [
+        "火",
+        "木"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0151",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-29",
+      "weeklyPattern": [
+        "水",
+        "金"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0153",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-04-14",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0155",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-26",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0156",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-09-19",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0157",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-08-24",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0158",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-12",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0161",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-01-09",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0163",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-08-05",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0165",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-19",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0168",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-24",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0171",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-28",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0172",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-02-15",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0174",
+      "serviceStatus": "終了",
+      "statusSince": "2026-07-07",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0175",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-03",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0178",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-28",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0179",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-24",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0180",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-10-15",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0182",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-03",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0183",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-18",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0185",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-25",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0186",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-08-03",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0187",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-06",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0190",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-24",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0192",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-13",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0196",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-09-11",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0199",
+      "serviceStatus": "終了",
+      "statusSince": "2026-04-06",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0200",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-09-18",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0201",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-10-22",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0205",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-17",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0206",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-21",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0207",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-14",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0208",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-06",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0210",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-01",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0212",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-06-24",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0221",
+      "serviceStatus": "終了",
+      "statusSince": "2026-01-04",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0227",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-08",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "1",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0234",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-16",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0242",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-04",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0243",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-08",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0244",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-10-04",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0245",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-09-07",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0250",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-28",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0257",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-04",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0262",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-01-26",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "2",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0266",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-11",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0267",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-31",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0268",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-06-25",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0269",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-20",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0271",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-18",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "1",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0272",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-21",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0273",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-15",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0279",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-04-28",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0282",
+      "serviceStatus": "終了",
+      "statusSince": "2026-08-29",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0283",
+      "serviceStatus": "終了",
+      "statusSince": "2026-06-20",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0284",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-17",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0289",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-19",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0291",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-23",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0293",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-03-31",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0294",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-02-12",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0295",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-27",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0300",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-12-07",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0304",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-18",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0306",
+      "serviceStatus": "終了",
+      "statusSince": "2026-07-03",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0307",
+      "serviceStatus": "終了",
+      "statusSince": "2026-07-21",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0309",
+      "serviceStatus": "終了",
+      "statusSince": "2026-07-06",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0311",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-13",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "2",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0312",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-04-02",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0313",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-12-25",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0316",
+      "serviceStatus": "終了",
+      "statusSince": "2026-09-25",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0318",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-01-24",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0321",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-21",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0325",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-12-30",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0327",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-17",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0328",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-06",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0329",
+      "serviceStatus": "終了",
+      "statusSince": "2026-11-01",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0338",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-18",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0340",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-25",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0343",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-08-03",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0347",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-12-22",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0348",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-29",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0350",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-21",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0356",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-07-27",
+      "weeklyPattern": [],
+      "transportRoute": "1",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0357",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-14",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0358",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-06-16",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0359",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-20",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0361",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-10",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0363",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-12-10",
+      "weeklyPattern": [],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0370",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-12-21",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0373",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-08",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0374",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-20",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0375",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-09",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0376",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-03",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0377",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-02-27",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0379",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-19",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0384",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-11-01",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0388",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-22",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "1",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0394",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-26",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0396",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-21",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0398",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-06-13",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0402",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-01",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0407",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-11-02",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "4",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0410",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-11-25",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0412",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-10",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0414",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-22",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "1",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0415",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-10",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "1",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0419",
+      "serviceStatus": "終了",
+      "statusSince": "2026-10-18",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0421",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-22",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0422",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-11",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "3",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0425",
+      "serviceStatus": "終了",
+      "statusSince": "2026-09-10",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0428",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-21",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0430",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-12",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "3",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0431",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-02-11",
+      "weeklyPattern": [],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0432",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-28",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "2",
+      "transportNote": "門の内側で待機"
+    },
+    {
+      "id": "0433",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-05-06",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0434",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-23",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0439",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-09-01",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "2",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0440",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-02-23",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0442",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-18",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "1",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0444",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-08-09",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0447",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-04-29",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0450",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-11",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0451",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-01-21",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0454",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-01-07",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0457",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-01",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "2",
+      "transportNote": "到着時に呼び鈴"
+    },
+    {
+      "id": "0460",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-01",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "4",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0461",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-14",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0463",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-09-22",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0465",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-03-29",
+      "weeklyPattern": [
+        "月"
+      ],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0466",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-02-15",
+      "weeklyPattern": [
+        "火"
+      ],
+      "transportRoute": "2",
+      "transportNote": "出発前に声かけ"
+    },
+    {
+      "id": "0468",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-05-13",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0469",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-13",
+      "weeklyPattern": [
+        "水"
+      ],
+      "transportRoute": "1",
+      "transportNote": ""
+    },
+    {
+      "id": "0470",
+      "serviceStatus": "終了",
+      "statusSince": "2026-02-21",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0471",
+      "serviceStatus": "中止中",
+      "statusSince": "2026-08-05",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": ""
+    },
+    {
+      "id": "0472",
+      "serviceStatus": "中止中",
+      "statusSince": "2025-12-08",
+      "weeklyPattern": [],
+      "transportRoute": "2",
+      "transportNote": ""
+    },
+    {
+      "id": "0474",
+      "serviceStatus": "利用中",
+      "statusSince": "2025-10-16",
+      "weeklyPattern": [
+        "木"
+      ],
+      "transportRoute": "3",
+      "transportNote": ""
+    },
+    {
+      "id": "0475",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-07-26",
+      "weeklyPattern": [
+        "金"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    },
+    {
+      "id": "0478",
+      "serviceStatus": "終了",
+      "statusSince": "2026-09-29",
+      "weeklyPattern": [],
+      "transportRoute": "",
+      "transportNote": "玄関前で待機"
+    },
+    {
+      "id": "0479",
+      "serviceStatus": "利用中",
+      "statusSince": "2026-10-22",
+      "weeklyPattern": [
+        "土"
+      ],
+      "transportRoute": "4",
+      "transportNote": ""
+    }
+  ],
+  "attendance": {
+    "date": "2026-11-10",
+    "records": [
+      {
+        "id": "0001",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0006",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0007",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0013",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0014",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0015",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0017",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0018",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0019",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0026",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0028",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0029",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0030",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0032",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0033",
+        "status": "欠席",
+        "reason": "受診"
+      },
+      {
+        "id": "0035",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0036",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0037",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0038",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0040",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0041",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0042",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0043",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0044",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0045",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0046",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0050",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0058",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0059",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0060",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0062",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0064",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0067",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0071",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0073",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0074",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0075",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0076",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0079",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0080",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0081",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0082",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0087",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0088",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0089",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0090",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0091",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0096",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0098",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0099",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0107",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0115",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0116",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0119",
+        "status": "欠席",
+        "reason": "家族都合"
+      },
+      {
+        "id": "0122",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0125",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0126",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0127",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0128",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0132",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0139",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0150",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0151",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0153",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0155",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0156",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0157",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0158",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0161",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0163",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0165",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0168",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0171",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0172",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0174",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0175",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0178",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0179",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0180",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0182",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0183",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0185",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0186",
+        "status": "欠席",
+        "reason": "受診"
+      },
+      {
+        "id": "0187",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0190",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0192",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0196",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0199",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0200",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0201",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0205",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0206",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0207",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0208",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0210",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0212",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0221",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0227",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0234",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0242",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0243",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0244",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0245",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0250",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0257",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0262",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0266",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0267",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0268",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0269",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0271",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0272",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0273",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0279",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0282",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0283",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0284",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0289",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0291",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0293",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0294",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0295",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0300",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0304",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0306",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0307",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0309",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0311",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0312",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0313",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0316",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0318",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0321",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0325",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0327",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0328",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0329",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0338",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0340",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0343",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0347",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0348",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0350",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0356",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0357",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0358",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0359",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0361",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0363",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0370",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0373",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0374",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0375",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0376",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0377",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0379",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0384",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0388",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0394",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0396",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0398",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0402",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0407",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0410",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0412",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0414",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0415",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0419",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0421",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0422",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0425",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0428",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0430",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0431",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0432",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0433",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0434",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0439",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0440",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0442",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0444",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0447",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0450",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0451",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0454",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0457",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0460",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0461",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0463",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0465",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0466",
+        "status": "出席",
+        "reason": ""
+      },
+      {
+        "id": "0468",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0469",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0470",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0471",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0472",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0474",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0475",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0478",
+        "status": "対象外",
+        "reason": ""
+      },
+      {
+        "id": "0479",
+        "status": "対象外",
+        "reason": ""
+      }
+    ]
+  }
+}
