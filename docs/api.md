@@ -120,7 +120,7 @@ interface BoardPost {
 | GET | `/api/staff/:id/deliveries` | v1 と同じ | Android |
 | POST | `/api/deliveries/:id/ack` | v1 と同じ | Android |
 | GET | `/api/stats` | `{messages, deliveries, acked, unacked, board_posts}` | PC |
-| GET | `/api/board` | **v2 追加**: 有効な共有ボード投稿（`archived_at IS NULL` かつ `until` 未到来または null）を新しい順 | タブレット |
+| GET | `/api/board` | **v2 追加**: 有効な共有ボード投稿（`archived_at IS NULL` かつ `until` 未到来または null）を緊急度 high→medium→low、同順位は新しい順。`?all=1` で終了・期限切れ込みの最新100件 | タブレット |
 | POST | `/api/board/:id/archive` | **v2 追加**: 掲示を終了 | PC |
 | POST | `/api/intake` | **v2 追加**: multipart `file`（1件、最大 20MB）→ `Attachment`。画像/PDF は Claude で読み取り、TXT/DOCX/XLS/XLSX はローカル抽出。レート制限は解析と共有 | PC / スマホ |
 | GET | `/api/attachments/:id` | **v2 追加**: `Attachment`（extracted_text 含む） | PC |
