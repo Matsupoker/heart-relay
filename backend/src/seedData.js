@@ -1,16 +1,19 @@
 // すべて架空のデータ。実在の個人・事業所とは無関係です。
 
-export const STAFF = [
+import { ledgerIdOf } from './ledger/staffMap.js';
+
+// transport_routes: 担当する送迎コース（台帳の transportRoute "1".."4" と対応）。運転手・送迎添乗のみ
+const BASE_STAFF = [
   { id: 's01', name: '緑川 誠一', role: '事業所長', duties: ['事業所統括', '来客対応'] },
   { id: 's02', name: '岡田 健太', role: '理学療法士', duties: ['個別機能訓練'] },
   { id: 's03', name: '森下 彩', role: '理学療法士', duties: ['個別機能訓練'] },
   { id: 's04', name: '高橋 美和', role: '看護師', duties: ['バイタル', '服薬管理'] },
   { id: 's05', name: '野口 千春', role: '看護師', duties: ['バイタル', '服薬管理'] },
   { id: 's06', name: '村井 拓也', role: '生活相談員', duties: ['家族連絡', 'ケアマネ連携'] },
-  { id: 's07', name: '竹内 康介', role: '運転手', duties: ['送迎(午前)', '送迎(午後)'] },
-  { id: 's08', name: '長谷川 修', role: '運転手', duties: ['送迎(午前)', '送迎(午後)'] },
-  { id: 's09', name: '石田 優子', role: '介護職員', duties: ['送迎添乗(午後)'] },
-  { id: 's10', name: '山口 翔太', role: '介護職員', duties: ['送迎添乗(午後)'] },
+  { id: 's07', name: '竹内 康介', role: '運転手', duties: ['送迎(午前) コース1・2', '送迎(午後) コース1・2'], transport_routes: ['1', '2'] },
+  { id: 's08', name: '長谷川 修', role: '運転手', duties: ['送迎(午前) コース3・4', '送迎(午後) コース3・4'], transport_routes: ['3', '4'] },
+  { id: 's09', name: '石田 優子', role: '介護職員', duties: ['送迎添乗(午後) コース1・2'], transport_routes: ['1', '2'] },
+  { id: 's10', name: '山口 翔太', role: '介護職員', duties: ['送迎添乗(午後) コース3・4'], transport_routes: ['3', '4'] },
   { id: 's11', name: '西村 恵', role: '介護職員', duties: ['入浴介助'] },
   { id: 's12', name: '前田 大輔', role: '介護職員', duties: ['入浴介助'] },
   { id: 's13', name: '藤井 さくら', role: '介護職員', duties: ['入浴介助'] },
@@ -23,22 +26,28 @@ export const STAFF = [
   { id: 's20', name: '大野 健', role: '介護職員', duties: ['レクリエーション'] },
 ];
 
-export const RESIDENTS = [
-  { id: 'r01', name: '青木 正雄', notes: '普通食 / 午後送迎 コース2 / 歩行器' },
-  { id: 'r02', name: '石川 とみ', notes: '刻み食 / 車いす / 午前送迎 コース1' },
-  { id: 'r03', name: '内田 清', notes: '普通食 / 入浴は週2回 / 午後送迎 コース1' },
-  { id: 'r04', name: '遠藤 君子', notes: 'ミキサー食 / 車いす / 午後送迎 コース3' },
-  { id: 'r05', name: '小川 茂', notes: '普通食 / 糖尿病食 / 午後送迎 コース2' },
-  { id: 'r06', name: '加藤 ふみ', notes: '普通食 / 難聴あり / 午前送迎 コース1' },
-  { id: 'r07', name: '木村 勇', notes: 'おかゆ / 杖歩行 / 午後送迎 コース3' },
-  { id: 'r08', name: '工藤 澄子', notes: '普通食 / 右膝に湿布 / 午後送迎 コース1' },
+// 起動時に staff テーブルへ upsert して属性を同期する（id は不変）
+export const STAFF = BASE_STAFF.map((s) => ({
+  ...s,
+  ledger_staff_id: ledgerIdOf(s.id),
+  transport_routes: s.transport_routes || [],
+}));
+
+// Web UI のクイック挿入ボタン用サンプル連絡事項（利用者名は fixtures/ の200名台帳に実在する架空の氏名）
+// label は画面のボタン表示用。expect は照合の想定（テスト・確認用）
+export const DEMO_SAMPLES = [
+  { label: '受診で早めの帰宅', expect: 'confirmed',
+    raw_text: '坂井 夏子様、11/10（火）は午後に眼科受診のため15時に自宅へ送ってほしいとご家族から電話。クリニックへはご家族が同行。' },
+  { label: '食事形態の変更', expect: 'confirmed',
+    raw_text: '飯島 愛子さん、11/10（火）から食事形態を普通食から刻み食に変更。看護師より。' },
+  { label: '姓のみ（候補選択）', expect: 'ambiguous',
+    raw_text: '江口様のご家族から、次回の入浴時に右膝へ湿布を貼ってほしいとの依頼がありました。' },
+  { label: '同姓同名（候補選択）', expect: 'ambiguous',
+    raw_text: '新田 洋子さん 11/10（火）は発熱のため欠席とご家族から連絡。ケアマネにも共有済み。' },
+  { label: '送迎車の点検', expect: 'none',
+    raw_text: '送迎車2号車 11/10（火）午前は定期点検のため使用不可。コース1・2の便の組み替えが必要です。' },
+  { label: 'レク内容の変更', expect: 'none',
+    raw_text: '11/10（火）午後のレクリエーションは雨天予報のため、中庭での散歩から室内での音楽体操に変更します。' },
 ];
 
-// Web UI のクイック挿入ボタン用サンプル連絡事項（利用者名は RESIDENTS と一致）
-export const DEMO_MESSAGES = [
-  '青木様（r01）は本日受診のため15時までに帰宅が必要。ご家族がクリニックで待ち合わせ。',
-  '石川様 明日は欠席、発熱のためケアマネから連絡あり',
-  '内田様 本日から食事形態を普通食からおかゆに変更、看護師より',
-  '送迎車2号車 明日午前は点検のため使用不可',
-  '工藤様のご家族から入浴時に右膝の湿布を貼ってほしいとの依頼',
-];
+export const DEMO_MESSAGES = DEMO_SAMPLES.map((d) => d.raw_text);
