@@ -19,7 +19,19 @@ const state = {
   ackedSeen: null,      // Set<delivery id>（初回はnull）
   busy: false,
   sentNote: null,
+  audience: 'individual',
+  board: { title: '', body: '', until: '' },   // until は datetime-local 値（JST）
+  attachments: [],      // 反映済みの添付 [{id, filename, kind, ...}]
+  extract: null,        // 確認待ちの抽出結果 {att, text}
+  intakeBusy: null,     // 取り込み中のファイル名
+  changing: false,      // 提案表示中に利用者を変更するUIを開いているか
+  pickResults: null,    // 検索結果 Resident[] | null
+  tab: 'input',
 };
+const NARROW = window.matchMedia('(max-width: 900px)');
+const LS_KEY = 'hr.createdBy';
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
 
 // ---------- util ----------
 const TZ = 'Asia/Tokyo';
@@ -46,7 +58,8 @@ function toast(msg, kind = 'err') {
 async function api(path, opts = {}) {
   let res;
   try {
-    res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }, body: opts.body ? JSON.stringify(opts.body) : undefined });
+    const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData;
+    res = await fetch(path, { ...opts, headers: isForm ? { ...(opts.headers || {}) } : { 'Content-Type': 'application/json', ...(opts.headers || {}) }, body: opts.body ? (isForm ? opts.body : JSON.stringify(opts.body)) : undefined });
   } catch (e) { setConn(false); throw new Error('サーバーに接続できません'); }
   let data = null;
   try { data = await res.json(); } catch { /* ignore */ }
@@ -103,23 +116,106 @@ async function submitMessage(ev) {
   const raw = $('raw-text').value.trim();
   if (!raw) { toast('連絡内容を入力してください'); return; }
   if (state.busy) return;
-  state.sentNote = null;
+  if (state.extract && !confirm('「抽出内容の確認」がまだ反映されていません。反映せずに解析しますか？')) return;
+  syncSource();
+  state.sentNote = null; state.changing = false; state.pickResults = null;
   state.current = { loading: true };
-  setBusy(true); renderProposal();
+  setBusy(true); setTab('proposal'); renderProposal();
+  const body = { raw_text: raw, source: $('source').value, created_by: $('created-by').value || '相談員 デモ' };
+  if (state.attachments.length) body.attachment_ids = state.attachments.map((a) => a.id);
   try {
-    const m = await api('/api/messages', { method: 'POST', body: { raw_text: raw, source: $('source').value, created_by: $('created-by').value.trim() || '相談員 デモ' } });
+    const m = await api('/api/messages', { method: 'POST', body });
+    state.attachments = []; renderChips();
     setCurrent(m);
   } catch (e) {
     state.current = null; toast('解析に失敗しました: ' + e.message);
-    renderProposal();
+    renderProposal(); setTab('input');
   } finally { setBusy(false); }
 }
+function toLocalInput(iso) {
+  if (!iso) return '';
+  const p = new Intl.DateTimeFormat('sv-SE', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(parseDate(iso));
+  return p.replace(' ', 'T').replace(/T24:/, 'T00:');
+}
+function fromLocalInput(v) { if (!v) return null; const d = new Date(v + ':00+09:00'); return isNaN(d) ? null : d.toISOString(); }
 function setCurrent(m) {
-  state.current = m;
+  state.current = m; state.changing = false; state.pickResults = null;
   if (m.status === 'proposed' && m.analysis) {
-    state.recips = (m.analysis.recipients || []).map((r) => ({ ...r, checked: true }));
+    const a = m.analysis;
+    state.recips = (a.recipients || []).map((r) => ({ ...r, checked: true }));
+    state.audience = ['individual', 'board', 'both'].includes(a.audience) ? a.audience : 'individual';
+    const bp = a.board_post;
+    state.board = { title: bp ? bp.title : (a.summary || ''), body: bp ? bp.body : (a.board_summary || ''), until: bp ? toLocalInput(bp.until) : '' };
   } else state.recips = [];
   renderProposal();
+  if (m.status === 'proposed' || m.status === 'needs_resident' || m.status === 'failed') setTab('proposal');
+}
+function setTab(t) {
+  state.tab = t; document.body.dataset.tab = t;
+  document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  if (NARROW.matches) window.scrollTo(0, 0);
+}
+function syncSource() {
+  if (state.attachments.length && $('source').value === '手入力') $('source').value = '書類（ファイル）';
+}
+
+// ---------- file intake (P0-4) ----------
+const KIND = { image: '画像', pdf: 'PDF', txt: 'テキスト', docx: 'Word', xlsx: 'Excel', xls: 'Excel（旧形式）' };
+async function intakeFile(file) {
+  if (!file) return;
+  if (state.intakeBusy) { toast('別のファイルを読み取り中です'); return; }
+  state.intakeBusy = file.name; state.extract = null; renderIntake();
+  const fd = new FormData(); fd.append('file', file, file.name);
+  try {
+    const att = await api('/api/intake', { method: 'POST', body: fd });
+    state.extract = { att, text: att.extracted_text || '' };
+  } catch (e) { toast('取り込みに失敗しました: ' + e.message); }
+  finally { state.intakeBusy = null; renderIntake(); }
+}
+function renderIntake() {
+  const st = $('intake-status'), area = $('extract-area');
+  st.innerHTML = state.intakeBusy ? `<div class="loading small" data-testid="intake-loading"><span class="spinner dark"></span>「${esc(state.intakeBusy)}」を読み取り中…<small>画像・PDFは Claude で読み取ります（数秒〜20秒ほど）</small></div>` : '';
+  const x = state.extract;
+  if (!x) { area.innerHTML = ''; return; }
+  const a = x.att;
+  area.innerHTML = `<div class="extract" data-testid="extract-panel">
+    <h3>抽出内容の確認</h3>
+    <div class="chips"><span class="chip" data-testid="extract-filename">${esc(a.filename)}</span><span class="chip">${esc(KIND[a.kind] || a.kind)}</span>
+      <span class="chip ${a.extractor === 'claude' ? 'chip-claude' : ''}" data-testid="extract-method">${a.extractor === 'claude' ? 'Claudeで読み取り' : 'ローカル抽出'}</span></div>
+    ${(a.warnings || []).length ? `<ul class="warn-list" data-testid="extract-warnings">${a.warnings.map((w) => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+    ${a.kind === 'image' ? `<img class="preview" data-testid="extract-preview" alt="取り込んだ画像のプレビュー" src="/api/attachments/${encodeURIComponent(a.id)}/file">` : ''}
+    <label class="field-label" for="extract-text">読み取り結果（原本と見比べて必要なら修正してください）</label>
+    <textarea id="extract-text" data-testid="extract-text" rows="7"></textarea>
+    <div class="btn-row"><button type="button" class="btn btn-primary" id="extract-apply" data-testid="extract-apply">この内容を連絡内容に反映</button>
+      <button type="button" class="btn" id="extract-discard" data-testid="extract-discard">破棄</button></div>
+  </div>`;
+  const ta = $('extract-text'); ta.value = x.text;
+  ta.addEventListener('input', () => { state.extract.text = ta.value; });
+  $('extract-apply').addEventListener('click', applyExtract);
+  $('extract-discard').addEventListener('click', () => { state.extract = null; renderIntake(); });
+}
+function applyExtract() {
+  const x = state.extract; if (!x) return;
+  const txt = x.text.trim();
+  const rt = $('raw-text');
+  if (txt) rt.value = rt.value.trim() ? rt.value.replace(/\s+$/, '') + '\n\n' + txt : txt;
+  if (!state.attachments.some((a) => a.id === x.att.id)) state.attachments.push(x.att);
+  state.extract = null; syncSource(); renderIntake(); renderChips();
+  toast('連絡内容に反映しました。内容を確認して「AIで解析する」を押してください', 'ok');
+}
+function renderChips() {
+  const root = $('chips');
+  root.innerHTML = state.attachments.map((a, i) => `<span class="att-chip" data-testid="attachment-chip" data-id="${esc(a.id)}">📎 ${esc(a.filename)}<button type="button" class="chip-x" data-i="${i}" data-testid="attachment-remove" aria-label="${esc(a.filename)} を外す">×</button></span>`).join('');
+  root.querySelectorAll('.chip-x').forEach((b) => b.addEventListener('click', () => { state.attachments.splice(Number(b.dataset.i), 1); renderChips(); }));
+}
+function setupCreatedBy() {
+  const sel = $('created-by'); const saved = lsGet(LS_KEY);
+  const list = [...state.staff.values()].filter((s) => s.active !== false);
+  if (!list.length) return;
+  sel.innerHTML = list.map((s) => `<option value="${esc(s.name)}">${esc(s.name)}（${esc(s.role)}）</option>`).join('');
+  const names = list.map((s) => s.name);
+  sel.value = names.includes(saved) ? saved : (list.find((s) => s.role === '生活相談員') || list[0]).name;
+  sel.addEventListener('change', () => lsSet(LS_KEY, sel.value));
 }
 
 // ---------- proposal ----------
@@ -128,17 +224,86 @@ function staffLine(id) {
   if (!s) return { name: id, role: '', duties: [] };
   return { name: s.name, role: s.role, duties: s.duties || [] };
 }
+function keepScroll(fn) {
+  const col = document.querySelector('.col-proposal'); const st = col ? col.scrollTop : 0; const wy = window.scrollY;
+  fn(); const c2 = document.querySelector('.col-proposal'); if (c2) c2.scrollTop = st; window.scrollTo(0, wy);
+}
+const STATUS_CLS = { 利用中: 'ok', 中止中: 'warn', 終了: 'off' };
+function residentBlock(r, m) {
+  if (!r) return `<div class="resident-box none" data-testid="resident"><b>対象利用者：特定なし</b><span class="sub">（利用者に関係しない連絡として扱います）</span></div>`;
+  const at = r.attendance || {};
+  return `<div class="resident-box" data-testid="resident">
+    <div class="res-head"><span class="rname">${esc(r.name)}</span><span class="res-kana">${esc(r.kana || '')}</span><span class="chip">ID ${esc(r.id)}</span><span class="st st-${STATUS_CLS[r.service_status] || 'off'}">${esc(r.service_status)}</span></div>
+    <dl class="meta">
+      <dt>通所予定</dt><dd>${esc((r.weekly_pattern || []).join('・') || 'なし')}</dd>
+      <dt>当日の出欠</dt><dd data-testid="resident-attendance">${esc(at.status || '—')}${at.reason ? '（' + esc(at.reason) + '）' : ''}${at.date ? ` <span class="sub">${esc(at.date)}</span>` : ''}</dd>
+      <dt>送迎</dt><dd>${r.transport_route ? 'コース' + esc(r.transport_route) : 'なし（施設居住など）'}${r.transport_note ? ' ／ ' + esc(r.transport_note) : ''}</dd>
+      <dt>担当職員</dt><dd>${esc(r.staff_name || '—')}</dd>
+    </dl></div>`;
+}
+function candCard(c, isSearch) {
+  const same = c.same_name ? '<span class="dup" data-testid="same-name-badge">同姓同名あり</span>' : '';
+  return `<button type="button" class="cand" data-testid="resident-candidate" data-rid="${esc(c.id)}">
+    <span class="cand-main"><span class="rname">${esc(c.name)}</span><span class="res-kana">${esc(c.kana || '')}</span>${same}</span>
+    <span class="cand-sub"><span class="st st-${STATUS_CLS[c.service_status] || 'off'}">${esc(c.service_status)}</span> <span class="sub">ID ${esc(c.id)}</span>
+      ${c.reason ? `<span class="cand-why">${esc(c.reason)}</span>` : ''}${c.score != null && !isSearch ? `<span class="score" data-testid="cand-score">score ${esc(c.score)}</span>` : ''}</span></button>`;
+}
+function pickerHtml(m) {
+  const cands = state.pickResults ? state.pickResults.map((r) => ({ id: r.id, name: r.name, kana: r.kana, service_status: r.service_status, reason: '検索結果', score: null, same_name: false })) : ((m.resident_match && m.resident_match.candidates) || []);
+  const isSearch = !!state.pickResults;
+  const lead = state.changing
+    ? '<p class="summary">対象利用者を変更します</p><p class="hint">変更を確定すると、新しい利用者の情報で<b>再解析</b>します（現在の提案は破棄されます）。</p>'
+    : '<p class="summary" data-testid="needs-resident">どの利用者の連絡ですか？</p><p class="hint">文中の名前だけでは利用者を一人に決められませんでした。該当する方を選んでください。</p>';
+  return `${lead}
+    <p class="raw">${esc(m.raw_text)}</p>
+    <div class="cands" data-testid="resident-candidates">${cands.length ? cands.map((c) => candCard(c, isSearch)).join('') : '<div class="placeholder">候補がありません。検索してください。</div>'}</div>
+    <label class="field-label" for="resident-search">利用者を検索（氏名・カナ・ID）</label>
+    <input type="text" id="resident-search" data-testid="resident-search" placeholder="例：新田" autocomplete="off">
+    <div class="btn-row"><button type="button" class="btn" id="resident-none" data-testid="resident-none">利用者に関係しない連絡</button>
+      ${state.changing ? '<button type="button" class="btn" id="resident-cancel" data-testid="resident-cancel">変更をやめる</button>' : ''}</div>`;
+}
+function bindPicker(m) {
+  const root = $('proposal');
+  root.querySelectorAll('.cand').forEach((b) => b.addEventListener('click', () => chooseResident(m, b.dataset.rid)));
+  $('resident-none').addEventListener('click', () => chooseResident(m, null));
+  const c = $('resident-cancel'); if (c) c.addEventListener('click', () => { state.changing = false; state.pickResults = null; renderProposal(); });
+  let timer = null; const inp = $('resident-search');
+  inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+  inp.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      const q = inp.value.trim();
+      try { state.pickResults = q ? await api('/api/residents?q=' + encodeURIComponent(q) + '&limit=10') : null; }
+      catch (e) { toast('検索に失敗しました: ' + e.message); return; }
+      const list = root.querySelector('.cands'); if (!list) return;
+      const cands = state.pickResults ? state.pickResults.map((r) => ({ id: r.id, name: r.name, kana: r.kana, service_status: r.service_status, reason: '検索結果', same_name: false })) : ((m.resident_match && m.resident_match.candidates) || []);
+      list.innerHTML = cands.length ? cands.map((x) => candCard(x, !!state.pickResults)).join('') : '<div class="placeholder" data-testid="search-empty">該当する利用者がいません。</div>';
+      list.querySelectorAll('.cand').forEach((b) => b.addEventListener('click', () => chooseResident(m, b.dataset.rid)));
+    }, 250);
+  });
+}
+async function chooseResident(m, rid) {
+  if (state.busy) return;
+  if (state.changing && !confirm('対象利用者を変更すると再解析します（現在の提案内容と編集は破棄されます）。よろしいですか？')) return;
+  state.current = { loading: true }; state.changing = false; state.pickResults = null;
+  setBusy(true); renderProposal();
+  try { setCurrent(await api(`/api/messages/${encodeURIComponent(m.id)}/resident`, { method: 'POST', body: { resident_id: rid } })); }
+  catch (e) { toast('利用者の確定に失敗しました: ' + e.message); state.current = m; renderProposal(); }
+  finally { setBusy(false); }
+}
+const AUD = [['individual', '個別のみ', '選んだ職員にだけ届けます'], ['board', '全体共有のみ', '共有ボードに掲示します（個別配信なし）'], ['both', '両方', '個別配信＋共有ボード掲示']];
 function renderProposal() {
   const root = $('proposal'); const m = state.current;
   if (state.sentNote) {
     root.innerHTML = `<div class="ok-box" data-testid="sent-note">${esc(state.sentNote)}</div><p class="placeholder" style="margin-top:12px">次の連絡事項を入力してください。</p>`;
     return;
   }
-  if (!m) { root.innerHTML = '<div class="placeholder" data-testid="proposal-empty">左で連絡事項を入力して「AIで解析する」を押すと、ここにAIの提案が表示されます。</div>'; return; }
+  if (!m) { root.innerHTML = '<div class="placeholder" data-testid="proposal-empty">連絡事項を入力して「AIで解析する」を押すと、ここにAIの提案が表示されます。</div>'; return; }
   if (m.loading || m.status === 'analyzing') {
     root.innerHTML = '<div class="loading" data-testid="proposal-loading"><span class="spinner dark"></span>解析中…<small>Claudeが宛先と個別の本文を考えています（最大20秒ほど）</small></div>';
     return;
   }
+  if (m.status === 'needs_resident') { root.innerHTML = pickerHtml(m); bindPicker(m); return; }
   if (m.status === 'failed') {
     root.innerHTML = `<div class="error-box" data-testid="proposal-failed">解析に失敗しました：${esc(m.error || '原因不明')}</div>
       <p class="raw">${esc(m.raw_text)}</p>
@@ -147,35 +312,45 @@ function renderProposal() {
     return;
   }
   if (m.status === 'sent') {
-    root.innerHTML = '<div class="ok-box">配信済みです。右の一覧で確認状況を確認できます。</div>';
+    root.innerHTML = '<div class="ok-box">配信済みです。状況の一覧で確認状況を確認できます。</div>';
     return;
   }
+  if (state.changing) { root.innerHTML = pickerHtml(m); bindPicker(m); return; }
   const a = m.analysis;
-  const res = a.resident_id ? residentName(a.resident_id) : '（特定できず）';
   const usage = m.usage ? `入力 ${m.usage.input_tokens} / 出力 ${m.usage.output_tokens} トークン ≈ $${Number(m.usage.est_cost_usd).toFixed(4)}` : '';
   const used = new Set(state.recips.map((r) => r.staff_id));
   const addable = [...state.staff.values()].filter((s) => s.active !== false && !used.has(s.id));
+  const aud = state.audience; const showInd = aud !== 'board'; const showBoard = aud !== 'individual';
+  const excl = a.excluded || [];
   root.innerHTML = `
     <p class="summary" data-testid="summary">${esc(a.summary)}</p>
     <div class="chips">
       <span class="urg urg-${esc(a.urgency)}" data-testid="urgency">${esc(URG[a.urgency] || a.urgency)}</span>
       ${(a.categories || []).map((c) => `<span class="chip" data-testid="category">${esc(c)}</span>`).join('')}
     </div>
+    <div class="res-wrap">${residentBlock(m.resident, m)}<button type="button" class="btn btn-sm" id="resident-change" data-testid="resident-change">利用者を変更</button></div>
     <dl class="meta">
-      <dt>対象利用者</dt><dd data-testid="resident">${esc(res)}</dd>
       <dt>期限</dt><dd data-testid="deadline">${esc(a.deadline || 'なし')}</dd>
       <dt>必要な対応</dt><dd>${(a.required_actions || []).length ? `<ul class="actions-list" data-testid="required-actions">${a.required_actions.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : 'なし'}</dd>
     </dl>
-    <h3>宛先候補（${state.recips.length}名）— 内容を確認・修正してください</h3>
+    <fieldset class="aud" data-testid="audience"><legend>届け方</legend>
+      ${AUD.map(([v, l, d]) => `<label class="aud-opt ${aud === v ? 'on' : ''}"><input type="radio" name="audience" value="${v}" data-testid="audience-${v}" ${aud === v ? 'checked' : ''}><span><b>${l}</b><small>${d}</small></span></label>`).join('')}
+    </fieldset>
+    ${showInd ? `<h3>宛先候補（${state.recips.length}名）— 内容を確認・修正してください</h3>
     <div id="rcpts" data-testid="recipients">${state.recips.map(rcptHtml).join('')}</div>
     <div class="add-row">
       <select id="add-select" data-testid="add-select"><option value="">宛先を追加…</option>
         ${addable.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}（${esc(s.role)}）</option>`).join('')}</select>
       <button class="btn" id="btn-add" type="button" data-testid="btn-add">追加</button>
-    </div>
-    <h4 class="future-h">共有ボード向け要点（将来機能）</h4>
-    <div class="future" data-testid="board-summary">${esc(a.board_summary || '—')}</div>
+    </div>` : '<p class="hint" data-testid="no-individual">個別配信は行いません（共有ボードのみ）。</p>'}
+    ${showBoard ? `<h3>共有ボードに掲示する内容</h3>
+    <div class="board-edit" data-testid="board-edit">
+      <label class="field-label" for="board-title">掲示タイトル</label><input type="text" id="board-title" data-testid="board-title" value="${esc(state.board.title)}">
+      <label class="field-label" for="board-body">掲示本文（フロアの全員が見ます）</label><textarea id="board-body" data-testid="board-body" rows="3">${esc(state.board.body)}</textarea>
+      <label class="field-label" for="board-until">掲示の期限（空欄なら当日中）</label><input type="datetime-local" id="board-until" data-testid="board-until" value="${esc(state.board.until)}">
+    </div>` : `<h4 class="future-h">共有ボード向け要点</h4><div class="future" data-testid="board-summary">${esc(a.board_summary || '—')}</div>`}
     <h4 class="future-h">送らないと判断した職員と理由</h4>
+    ${excl.length ? `<ul class="excl" data-testid="excluded-list">${excl.map((x) => { const s = staffLine(x.staff_id); return `<li data-testid="excluded-item"><b>${esc(s.name)}</b>${s.role ? `<span class="role">${esc(s.role)}</span>` : ''}<span class="excl-why">${esc(x.reason)}</span></li>`; }).join('')}</ul>` : ''}
     <div class="future" data-testid="excluded-note">${esc(a.excluded_note || '—')}</div>
     <div class="btn-row">
       <button class="btn btn-send" id="btn-send" data-testid="btn-send">承認して配信</button>
@@ -183,12 +358,14 @@ function renderProposal() {
     </div>
     <div class="usage" data-testid="usage">${esc(usage)}${m.analyzer ? ` ／ 解析: ${m.analyzer === 'claude' ? 'Claude' + (m.model ? '（' + esc(m.model) + '）' : '') : 'モック'}` : ''}</div>`;
   root.querySelectorAll('.rcpt').forEach(bindRcpt);
-  $('btn-add').addEventListener('click', addRecipient);
+  const add = $('btn-add'); if (add) add.addEventListener('click', addRecipient);
   $('btn-send').addEventListener('click', sendMessage);
   $('btn-reanalyze').addEventListener('click', reanalyze);
+  $('resident-change').addEventListener('click', () => { state.changing = true; state.pickResults = null; renderProposal(); });
+  root.querySelectorAll('input[name=audience]').forEach((r) => r.addEventListener('change', () => { state.audience = r.value; keepScroll(renderProposal); }));
+  [['board-title', 'title'], ['board-body', 'body'], ['board-until', 'until']].forEach(([id, k]) => { const el = $(id); if (el) el.addEventListener('input', () => { state.board[k] = el.value; updateSendBtn(); }); });
   updateSendBtn();
 }
-function residentName(id) { return (state.residents && state.residents.get(id)) || id; }
 function rcptHtml(r, i) {
   const s = staffLine(r.staff_id);
   return `<div class="rcpt ${r.checked ? '' : 'off'}" data-idx="${i}" data-testid="recipient-card" data-staff-id="${esc(r.staff_id)}">
@@ -216,10 +393,20 @@ function bindRcpt(card) {
   const rm = card.querySelector('[data-rm]');
   if (rm) rm.addEventListener('click', () => { state.recips.splice(idx, 1); renderProposal(); });
 }
+function sendPlan() {
+  const aud = state.audience;
+  const n = aud === 'board' ? 0 : state.recips.filter((r) => r.checked).length;
+  const useBoard = aud !== 'individual';
+  const boardOk = !useBoard || (state.board.title.trim() && state.board.body.trim());
+  const valid = (n > 0 || useBoard) && boardOk;
+  const label = aud === 'individual' ? (n ? `承認して配信（${n}名）` : '承認して配信')
+    : aud === 'board' ? '承認して共有ボードに掲示'
+    : (n ? `承認して配信（${n}名＋共有ボード）` : '承認して共有ボードに掲示');
+  return { aud, n, useBoard, valid, label };
+}
 function updateSendBtn() {
-  const n = state.recips.filter((r) => r.checked).length;
   const b = $('btn-send'); if (!b) return;
-  b.disabled = n === 0; b.textContent = n ? `承認して配信（${n}名）` : '承認して配信';
+  const p = sendPlan(); b.disabled = !p.valid; b.textContent = p.label;
 }
 function addRecipient() {
   const id = $('add-select').value; if (!id) return;
@@ -230,18 +417,21 @@ function addRecipient() {
 }
 async function sendMessage() {
   const m = state.current; if (!m) return;
-  const rs = state.recips.filter((r) => r.checked);
-  if (!rs.length) { toast('送る宛先を選んでください'); return; }
+  const p = sendPlan();
+  if (!p.valid) { toast(p.useBoard ? '共有ボードのタイトルと本文を入力してください' : '送る宛先を選んでください'); return; }
+  const rs = p.aud === 'board' ? [] : state.recips.filter((r) => r.checked);
   const empty = rs.find((r) => !r.title.trim() || !r.body.trim());
   if (empty) { toast(`${staffLine(empty.staff_id).name} さんのタイトルと本文を入力してください`); return; }
   const btn = $('btn-send'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>配信中…';
   try {
     const payload = rs.map(({ checked, ...r }) => r);
-    await api(`/api/messages/${encodeURIComponent(m.id)}/send`, { method: 'POST', body: { recipients: payload } });
-    state.sentNote = `${rs.length}名へ配信しました。右の一覧で確認状況をご覧ください。`;
+    const board_post = p.useBoard ? { title: state.board.title.trim(), body: state.board.body.trim(), until: fromLocalInput(state.board.until) } : null;
+    await api(`/api/messages/${encodeURIComponent(m.id)}/send`, { method: 'POST', body: { recipients: payload, board_post } });
+    const parts = [rs.length ? `${rs.length}名へ配信` : '', board_post ? '共有ボードに掲示' : ''].filter(Boolean).join('し、');
+    state.sentNote = `${parts}しました。状況の一覧で確認状況をご覧ください。`;
     state.current = null; state.recips = [];
-    toast('配信しました', 'ok');
-    renderProposal(); pollOnce();
+    toast(board_post && !rs.length ? '共有ボードに掲示しました' : '配信しました', 'ok');
+    renderProposal(); pollOnce(); setTab('status');
   } catch (e) { toast('配信に失敗しました: ' + e.message); renderProposal(); }
 }
 async function reanalyze() {
@@ -257,6 +447,12 @@ function renderStats(s) {
   $('stats').innerHTML = [['連絡事項', s.messages, ''], ['配信', s.deliveries, ''], ['確認済み', s.acked, 'ok'], ['未確認', s.unacked, 'warn']]
     .map(([l, v, c]) => `<div class="stat ${c}" data-testid="stat-${esc(l)}"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
 }
+function boardBadge(b) {
+  if (!b) return '';
+  const live = !b.archived_at && (!b.until || parseDate(b.until) > new Date());
+  return live ? `<div><span class="pill pill-board" data-testid="board-badge">📌 共有ボード掲示中</span>${b.until ? `<span class="sent-time"> ${esc(fmtFull(b.until))} まで</span>` : ''}</div>`
+    : '<div><span class="pill pill-off" data-testid="board-badge-ended">共有ボード掲示終了</span></div>';
+}
 function renderSent(flashIds) {
   const sent = state.messages.filter((m) => m.status === 'sent');
   const root = $('sent-list');
@@ -267,7 +463,8 @@ function renderSent(flashIds) {
     return `<article class="sent ${ds.length && done === ds.length ? 'all-done' : ''}" data-testid="sent-message" data-id="${esc(m.id)}">
       <p class="sent-summary sent-sum">${esc(m.analysis ? m.analysis.summary : m.raw_text)}</p>
       <div class="sent-time">${esc(fmtFull(m.created_at))} ／ ${esc(m.created_by)}</div>
-      <div class="prog"><b data-testid="progress-text">確認 ${done} / ${ds.length}</b><div class="bar"><div style="width:${pct}%"></div></div></div>
+      ${boardBadge(m.board_post)}
+      <div class="prog" ${ds.length ? '' : 'hidden'}><b data-testid="progress-text">確認 ${done} / ${ds.length}</b><div class="bar"><div style="width:${pct}%"></div></div></div>
       ${ds.map((d) => `<div class="drow ${flashIds.has(d.id) ? 'flash' : ''}" data-testid="delivery-row" data-delivery-id="${esc(d.id)}" data-acked="${d.acknowledged_at ? '1' : '0'}">
         <span><span class="dname">${esc(d.staff_name)}</span><span class="drole">${esc(d.staff_role)}</span></span>
         ${d.acknowledged_at ? `<span class="pill pill-ok" data-testid="pill-ack">✅ 確認済み ${esc(fmtTime(d.acknowledged_at))}</span>` : '<span class="pill pill-wait" data-testid="pill-wait">⏳ 未確認</span>'}
@@ -291,10 +488,13 @@ async function pollOnce() {
 // ---------- init ----------
 async function init() {
   $('msg-form').addEventListener('submit', submitMessage);
-  renderQuick(); renderProposal(); renderSent(new Set());
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  $('file-input').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; intakeFile(f); });
+  $('camera-input').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; intakeFile(f); });
+  setTab('input'); renderQuick(); renderProposal(); renderSent(new Set());
   loadHealth(); loadSamples();
   try { (await api('/api/staff')).forEach((s) => state.staff.set(s.id, s)); } catch (e) { toast('職員一覧を取得できません: ' + e.message); }
-  try { state.residents = new Map((await api('/api/residents')).map((r) => [r.id, r.name])); } catch { state.residents = new Map(); }
+  setupCreatedBy();
   await pollOnce();
   setInterval(pollOnce, 3000);
   setInterval(loadHealth, 15000);
