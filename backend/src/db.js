@@ -1,6 +1,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
+import { BOARD_SCHEMA } from './board/schema.js';
+import { INTAKE_SCHEMA } from './intake/schema.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS staff (
@@ -36,5 +38,7 @@ export function openDb(dbPath) {
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA journal_mode = WAL;');
   db.exec(SCHEMA);
+  db.exec(BOARD_SCHEMA);
+  db.exec(INTAKE_SCHEMA);
   return db;
 }

@@ -1,15 +1,10 @@
 import express from 'express';
-import crypto from 'node:crypto';
+import path from 'node:path';
 import { log } from './log.js';
 import { DEMO_MESSAGES } from './seedData.js';
-
-const id = () => crypto.randomUUID();
-const now = () => new Date().toISOString();
-const j = (s, d = null) => { try { return s == null ? d : JSON.parse(s); } catch { return d; } };
-
-class HttpError extends Error {
-  constructor(status, message, code) { super(message); this.status = status; this.code = code; }
-}
+import { HttpError, newId as id, nowIso as now, parseJson as j } from './http.js';
+import { createBoardRouter } from './board/router.js';
+import { createIntakeRouter } from './intake/router.js';
 
 // ---------- DB 行 → API 型 ----------
 const toStaff = (r) => ({ id: r.id, name: r.name, role: r.role, duties: j(r.duties_json, []), active: !!r.active });
@@ -80,6 +75,11 @@ export function createRouter({ db, analyzer, env }) {
   const checkRate = () => {
     if (!allowAnalyze()) throw new HttpError(429, '解析の呼び出しが多すぎます。しばらくしてからやり直してください', 'rate_limited');
   };
+
+  // v2 サブルータ（別作業系統が実装。ファイルを分けて並行開発の競合を避ける）
+  const dataDir = path.dirname(path.resolve(env.DB_PATH || './data/heart-relay.db'));
+  router.use('/board', createBoardRouter({ db, env }));
+  router.use(createIntakeRouter({ db, env, analyzer, checkRate, dataDir }));
 
   router.get('/health', (req, res) => {
     res.json({ ok: true, analyzer: analyzer.name, model: analyzer.model || 'mock', time: now() });
@@ -198,7 +198,7 @@ export function createRouter({ db, analyzer, env }) {
 
   // エラー形式 { error, code }
   router.use((err, req, res, next) => {
-    if (err instanceof HttpError) return res.status(err.status).json({ error: err.message, code: err.code });
+    if (err instanceof HttpError || (err && Number.isInteger(err.status) && err.status < 500)) return res.status(err.status).json({ error: err.message, code: err.code });
     if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'JSON が不正です', code: 'bad_json' });
     if (err.type === 'entity.too.large') return res.status(400).json({ error: 'リクエストが大きすぎます', code: 'too_large' });
     log.error(err);
