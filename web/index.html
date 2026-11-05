@@ -13,13 +13,20 @@
     <p class="subtitle">必要な情報を、必要な人に、必要な形で。</p>
   </div>
   <div class="header-right">
+    <a class="board-link" href="/board.html" target="_blank" rel="noopener" data-testid="link-board">共有ボードを開く</a>
     <span id="analyzer-badge" class="badge badge-neutral" data-testid="analyzer-badge">確認中…</span>
     <span id="conn" class="conn conn-off" data-testid="conn-indicator"><i></i><span>接続確認中</span></span>
   </div>
 </header>
 
+<nav class="tabs" role="tablist" aria-label="画面切替" data-testid="tabs">
+  <button type="button" role="tab" class="tab" data-tab="input" data-testid="tab-input">1 入力</button>
+  <button type="button" role="tab" class="tab" data-tab="proposal" data-testid="tab-proposal">2 提案</button>
+  <button type="button" role="tab" class="tab" data-tab="status" data-testid="tab-status">3 状況</button>
+</nav>
+
 <main class="layout">
-  <section class="col col-input" aria-labelledby="h-input">
+  <section class="col col-input" data-pane="input" aria-labelledby="h-input">
     <h2 id="h-input"><span class="step">1</span>新規連絡事項</h2>
     <form id="msg-form" data-testid="msg-form">
       <label class="field-label" for="raw-text">連絡内容</label>
@@ -29,24 +36,38 @@
         <div>
           <label class="field-label" for="source">情報源</label>
           <select id="source" data-testid="source">
-            <option>手入力</option><option>電話</option><option>FAX</option><option>紙メモ</option><option>ケアマネ連絡</option><option>家族連絡</option>
+            <option>手入力</option><option>電話</option><option>FAX</option><option>紙メモ</option><option>ケアマネ連絡</option><option>家族連絡</option><option>書類（ファイル）</option>
           </select>
         </div>
         <div>
           <label class="field-label" for="created-by">入力者</label>
-          <input id="created-by" data-testid="created-by" type="text" value="相談員 デモ">
+          <select id="created-by" data-testid="created-by"><option value="相談員 デモ">相談員 デモ</option></select>
         </div>
+      </div>
+      <div class="intake" data-testid="intake">
+        <span class="field-label">ファイル・写真から取り込む</span>
+        <div class="intake-btns">
+          <label class="btn file-btn">ファイルから取り込む
+            <input type="file" class="sr-only" id="file-input" data-testid="file-input" accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.docx,.xls,.xlsx">
+          </label>
+          <label class="btn file-btn camera-btn">カメラで撮影
+            <input type="file" class="sr-only" id="camera-input" data-testid="camera-input" accept="image/*" capture="environment">
+          </label>
+        </div>
+        <div id="intake-status" data-testid="intake-status" aria-live="polite"></div>
+        <div id="extract-area"></div>
+        <div id="chips" class="att-chips" data-testid="attachment-chips"></div>
       </div>
       <button id="submit" type="submit" class="btn btn-primary btn-lg" data-testid="submit-analyze">AIで解析する</button>
     </form>
   </section>
 
-  <section class="col col-proposal" aria-labelledby="h-prop">
+  <section class="col col-proposal" data-pane="proposal" aria-labelledby="h-prop">
     <h2 id="h-prop"><span class="step">2</span>AI提案の確認</h2>
     <div id="proposal" data-testid="proposal-panel"></div>
   </section>
 
-  <section class="col col-status" aria-labelledby="h-status">
+  <section class="col col-status" data-pane="status" aria-labelledby="h-status">
     <h2 id="h-status"><span class="step">3</span>配信状況と確認状況</h2>
     <div id="stats" class="stats" data-testid="stats"></div>
     <div id="sent-list" data-testid="sent-list"></div>
