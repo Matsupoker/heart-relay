@@ -39,6 +39,7 @@ const SYSTEM_PROMPT = `あなたは、デイサービス（1事業所）の連�
 - 全員への一斉送信は避ける。職種と「当日の担当業務(duties)」の両方を見て、本当に対応や把握が必要な職員だけを宛先にする。
 - 宛先ごとに title / body / action_required を職種に合わせて書き分ける（例: 運転手には送迎時刻や待ち合わせ、介護職員には準備や介助の注意、看護師には健康面の確認、相談員には家族・ケアマネ連絡）。
 - 簡潔に書く。推測で事実を足さない。不明な点は action_required で確認を促す。
+- 回答は必ずツール submit_analysis を1回呼び出して提出する。本文のテキストでの説明は不要。ツールが使えない場合のみ、同じスキーマの JSON だけを出力する。
 - staff_id は必ず提供された名簿のIDのみを使う。利用者は利用者一覧のIDで resident_id に入れる（判別できなければ null）。
 - excluded_note には、宛先に含めなかった職員（職種・担当）と、その理由を書く。
 - board_summary は事業所の共有ボードに載せる1行の要点にする。
@@ -55,6 +56,19 @@ function buildUserMessage({ rawText, source, staff, residents }) {
 
 const isRetryable = (e) => e?.status >= 500 || e?.status === 529 || /overloaded/i.test(e?.message || '');
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+
+// 本文テキストから JSON オブジェクトを取り出す（tool_use が無かった場合の保険）
+function extractJson(text) {
+  if (!text) return null;
+  const m = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidates = [m?.[1], text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)];
+  for (const c of candidates) {
+    if (!c) continue;
+    try { const o = JSON.parse(c); if (o && typeof o === 'object') return o; } catch { /* 次へ */ }
+  }
+  return null;
+}
 
 export class ClaudeAnalyzer {
   name = 'claude';
@@ -81,18 +95,25 @@ export class ClaudeAnalyzer {
         max_tokens: 4000,
         system: SYSTEM_PROMPT,
         tools: [{ name: TOOL_NAME, description: '連絡事項の解析結果と宛先の提案を提出する', input_schema: ANALYSIS_SCHEMA }],
-        tool_choice: { type: 'tool', name: TOOL_NAME },
+        // 注: 一部モデルは tool_choice の "tool"/"any" 強制に非対応（400）のため auto とし、
+        //     システムプロンプトで必ずツールを呼ぶよう指示する。未使用時は本文の JSON を解析する。
+        tool_choice: { type: 'auto' },
         messages: [{ role: 'user', content: buildUserMessage({ rawText, source, staff, residents }) }],
       });
     } catch (e) {
       throw new Error(`Claude API エラー${e?.status ? `(${e.status})` : ''}: ${e?.message || e}`);
     }
     const block = res.content?.find((b) => b.type === 'tool_use' && b.name === TOOL_NAME);
-    if (!block) throw new Error('Claude の応答に解析結果(tool_use)が含まれていませんでした');
+    let raw = block?.input;
+    if (!raw) {
+      const text = (res.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
+      raw = extractJson(text);
+    }
+    if (!raw) throw new Error('Claude の応答に解析結果(tool_use / JSON)が含まれていませんでした');
     const inT = res.usage?.input_tokens ?? 0;
     const outT = res.usage?.output_tokens ?? 0;
     return {
-      analysis: normalizeAnalysis(block.input, { staff, residents }),
+      analysis: normalizeAnalysis(raw, { staff, residents }),
       usage: { input_tokens: inT, output_tokens: outT, est_cost_usd: estimateCost(this.model, inT, outT) },
       model: this.model,
     };

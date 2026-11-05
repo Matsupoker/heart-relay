@@ -5,7 +5,7 @@ import { STAFF, RESIDENTS } from '../src/seedData.js';
 
 const staff = STAFF.map((s) => ({ ...s, active: true }));
 
-test('Claude解析器: 名簿外IDを除外し、費用を計算し、tool_choiceを固定する', async () => {
+test('Claude解析器: 名簿外IDを除外し、費用を計算し、tool_choiceはautoにする', async () => {
   let params; let calls = 0;
   const client = { messages: { create: async (p) => {
     params = p; calls++;
@@ -25,7 +25,7 @@ test('Claude解析器: 名簿外IDを除外し、費用を計算し、tool_choic
   const a = new ClaudeAnalyzer({ client, model: 'claude-sonnet-5-5' });
   const out = await a.analyze({ rawText: 'x', source: '手入力', staff, residents: RESIDENTS });
   assert.equal(calls, 2);
-  assert.deepEqual(params.tool_choice, { type: 'tool', name: 'submit_analysis' });
+  assert.deepEqual(params.tool_choice, { type: 'auto' });
   assert.equal(params.max_tokens, 4000);
   assert.deepEqual(out.analysis.recipients.map((r) => r.staff_id), ['s07']);
   assert.equal(out.usage.est_cost_usd, (1000 * 2 + 500 * 10) / 1e6);
