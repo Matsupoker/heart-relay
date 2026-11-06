@@ -47,6 +47,15 @@ export function createApp({ dbPath, env = process.env, analyzer } = {}) {
 
 // 直接実行されたときだけ待ち受け開始
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  // 停止原因を必ずログに残す（2026-11-07 の本番 PC での停止はログが無く原因不明だったため）
+  // unhandledRejection: 記録して継続（Node 15+ の既定は終了）。uncaughtException: 記録して終了コード 1
+  process.on('unhandledRejection', (reason) => {
+    log.error('unhandledRejection（処理は継続）:', reason instanceof Error ? reason.stack : reason);
+  });
+  process.on('uncaughtException', (err, origin) => {
+    log.error(`uncaughtException（${origin}）のため終了します:`, err instanceof Error ? err.stack : err);
+    process.exit(1);
+  });
   dotenv.config({ path: path.resolve(__dirname, '..', '.env'), quiet: true });
   const port = Number(process.env.PORT) || 8787;
   const { app } = createApp({});
