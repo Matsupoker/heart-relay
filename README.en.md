@@ -107,3 +107,14 @@ Even so, the project hopes to demonstrate one direction worth exploring: reducin
 **What can technology do to help people continue caring for one another?**
 
 HEART RELAY is one attempt to explore that question.
+
+## 8. Screen Layout (UI refresh, 2026-11-07)
+
+The PC screen is a single page (`web/index.html`) that switches views by hash routing:
+
+- `#/home` Home: today's delivery, unacknowledged, and acknowledged counts, plus today's messages
+- `#/new` New message: enter, review the AI proposal, approve
+- `#/deliveries` and `#/deliveries/<id>` Delivery management: list and detail (acknowledgement status per staff member, AI selection rationale)
+- Shared board `board.html`: opens in a new tab
+
+Design record (in Japanese, including intentional differences from the approved mock): [docs/plan/UI刷新_2026-11-07.md](docs/plan/UI刷新_2026-11-07.md)
