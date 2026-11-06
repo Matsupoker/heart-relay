@@ -28,9 +28,16 @@ const state = {
   dlAll: false,         // 配信管理: 「すべて」表示か
   exclOpen: false,      // 配信詳細: 除外職員の折りたたみ開閉
   pending: null,        // ルート遷移後に行う操作 'focus'
+  offices: [],          // [{id, name, kind}]
+  office: 'A',          // 表示中の事業所 id
+  corp: { inbox: [], outbox: [], loaded: false, drafting: false, sending: false },
 };
 const NARROW = window.matchMedia('(max-width: 900px)');
 const LS_KEY = 'hr.createdBy';
+const LS_OFFICE = 'hr.office';
+const FALLBACK_OFFICES = [{ id: 'A', name: 'デイサービス（架空）', kind: 'デイサービス' }];
+const officeQ = () => '?office=' + encodeURIComponent(state.office);
+const officeById = (id) => state.offices.find((o) => o.id === id) || { id, name: id, kind: '' };
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* ignore */ } };
 
@@ -122,7 +129,7 @@ async function submitMessage(ev) {
   state.changing = false; state.pickResults = null;
   state.current = { loading: true };
   setBusy(true); renderProposal(); focusProposal();
-  const body = { raw_text: raw, source: $('source').value, created_by: $('created-by').value || '相談員 デモ' };
+  const body = { raw_text: raw, source: $('source').value, created_by: $('created-by').value || '相談員 デモ', office_id: state.office };
   if (state.attachments.length) body.attachment_ids = state.attachments.map((a) => a.id);
   try {
     const m = await api('/api/messages', { method: 'POST', body });
@@ -209,12 +216,12 @@ function renderChips() {
 }
 function setupCreatedBy() {
   const sel = $('created-by'); const saved = lsGet(LS_KEY);
+  if (!sel.dataset.bound) { sel.dataset.bound = '1'; sel.addEventListener('change', () => lsSet(LS_KEY, sel.value)); }
   const list = [...state.staff.values()].filter((s) => s.active !== false);
   if (!list.length) return;
   sel.innerHTML = list.map((s) => `<option value="${esc(s.name)}">${esc(s.name)}（${esc(s.role)}）</option>`).join('');
   const names = list.map((s) => s.name);
   sel.value = names.includes(saved) ? saved : (list.find((s) => s.role === '生活相談員') || list[0]).name;
-  sel.addEventListener('change', () => lsSet(LS_KEY, sel.value));
 }
 
 // ---------- proposal ----------
@@ -561,11 +568,173 @@ function renderDeliveries(flashIds = new Set()) {
   const ex = d.querySelector('details.excl-d'); if (ex && !ex.dataset.bound) { ex.dataset.bound = '1'; ex.addEventListener('toggle', () => { state.exclOpen = ex.open; }); }
 }
 
+
+// ---------- offices ----------
+function renderOfficeSelect() {
+  const sel = $('office-select');
+  sel.innerHTML = state.offices.map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  sel.value = state.office;
+  const link = state.office === 'A' ? '/board.html' : '/board.html?office=' + encodeURIComponent(state.office);
+  ['nav-board', 'link-board'].forEach((id) => { $(id).setAttribute('href', link); });
+}
+async function loadOffices() {
+  let list = null;
+  try { list = await api('/api/offices'); } catch { /* 旧バックエンド: 単一事業所として動作 */ }
+  state.offices = Array.isArray(list) && list.length ? list : FALLBACK_OFFICES;
+  const saved = lsGet(LS_OFFICE);
+  state.office = state.offices.some((o) => o.id === saved) ? saved : (state.offices.find((o) => o.id === 'A') || state.offices[0]).id;
+  renderOfficeSelect();
+}
+async function loadStaff() {
+  const oid = state.office;
+  try {
+    const list = await api('/api/staff' + officeQ());
+    if (oid !== state.office) return;
+    state.staff = new Map(list.map((s) => [s.id, s]));
+  } catch (e) { toast('職員一覧を取得できません: ' + e.message); }
+  setupCreatedBy();
+}
+async function switchOffice(id) {
+  if (id === state.office || !state.offices.some((o) => o.id === id)) return;
+  state.office = id; lsSet(LS_OFFICE, id);
+  renderOfficeSelect();
+  // 事業所ごとの状態を破棄（別事業所の提案・一覧を引きずらない）
+  state.messages = []; state.ackedSeen = null; state.current = null; state.recips = []; state.attachments = []; state.extract = null;
+  state.staff = new Map(); state.corp = { inbox: [], outbox: [], loaded: false, drafting: false, sending: false };
+  $('raw-text').value = ''; renderChips(); renderIntake(); renderProposal();
+  corpResetForm(); $('corp-draft-status').innerHTML = '';
+  if (currentRoute().name === 'deliveries' && currentRoute().id) location.hash = '#/deliveries';
+  renderViews();
+  await loadStaff();
+  await Promise.all([pollOnce(), pollCorp()]);
+}
+
+// ---------- 法人内連絡 ----------
+const otherOffices = () => state.offices.filter((o) => o.id !== state.office);
+function corpResetForm() {
+  $('corp-title').value = ''; $('corp-body').value = ''; $('corp-source').value = '';
+  const to = $('corp-to'); const others = otherOffices();
+  to.innerHTML = others.map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+}
+function renderCorpSource() {
+  const sel = $('corp-source'); const cur = sel.value;
+  const opts = sentMessages().map((m) => `<option value="${esc(m.id)}">${esc(fmtFull(m.created_at))} ${esc(residentLabel(m))} ${esc(clip(categoryOf(m), 14))}</option>`);
+  const html = '<option value="">新規入力</option>' + opts.join('');
+  if (sel.dataset.h !== html) { sel.innerHTML = html; sel.dataset.h = html; sel.value = [...sel.options].some((o) => o.value === cur) ? cur : ''; }
+}
+function corpPickSource() {
+  const id = $('corp-source').value; if (!id) return;
+  const m = state.messages.find((x) => x.id === id); if (!m) return;
+  const a = m.analysis || {};
+  const lines = [a.summary || m.raw_text || ''];
+  const acts = (a.required_actions || []).filter(Boolean);
+  if (acts.length) lines.push('', '必要な対応：', ...acts.map((x) => '・' + x));
+  const cur = $('corp-body').value.trim();
+  if (cur && !confirm('本文の内容を、選んだ連絡の要約と必要な対応に置き換えますか？')) { $('corp-source').value = ''; return; }
+  $('corp-body').value = lines.join('\n');
+}
+function corpStatus(html) { $('corp-draft-status').innerHTML = html; }
+async function corpDraft() {
+  if (state.corp.drafting) return;
+  const to = $('corp-to').value; const src = $('corp-source').value; const notes = $('corp-body').value.trim();
+  if (!to) { toast('送信先の事業所を選んでください'); return; }
+  if (!src && !notes) { toast('内容の元を選ぶか、本文に伝えたい要点を入力してください'); return; }
+  const oid = state.office;
+  state.corp.drafting = true; $('corp-draft').disabled = true;
+  $('corp-draft').querySelector('span').textContent = '文面を作成中…';
+  corpStatus('<div class="busy" data-testid="corp-draft-busy"><span class="spinner dark"></span>AI が文面の案を作成しています…</div>');
+  try {
+    const payload = { from_office_id: oid, to_office_id: to, notes: $('corp-body').value };
+    if (src) payload.source_message_id = src;
+    const d = await api('/api/office-messages/draft', { method: 'POST', body: payload });
+    if (oid !== state.office) return;
+    corpStatus('');
+    if (confirm(`この案を反映しますか？（現在の件名・本文は置き換わります）\n\n件名：${d.title}\n\n${d.body}`)) {
+      $('corp-title').value = d.title || ''; $('corp-body').value = d.body || '';
+      toast('案を反映しました。内容を確認・編集してから送信してください', 'ok');
+    }
+  } catch (e) {
+    if (oid === state.office) corpStatus(`<div class="error-box" data-testid="corp-draft-error" role="alert">文面の作成に失敗しました: ${esc(e.message)}。手入力で続けることもできます。</div>`);
+  } finally {
+    state.corp.drafting = false; $('corp-draft').disabled = false;
+    $('corp-draft').querySelector('span').textContent = 'AI で文面を整える';
+  }
+}
+async function corpSend() {
+  if (state.corp.sending) return;
+  const to = $('corp-to').value; const title = $('corp-title').value.trim(); const body = $('corp-body').value.trim();
+  if (!to) { toast('送信先の事業所を選んでください'); return; }
+  if (!title) { toast('件名を入力してください'); return; }
+  if (!body) { toast('本文を入力してください'); return; }
+  if (!confirm(`次の内容で ${officeById(to).name} に送信します。\n\n送信先：${officeById(to).name}\n件名：${title}\n\nよろしいですか？`)) return;
+  const oid = state.office;
+  const payload = { from_office_id: oid, to_office_id: to, title, body, created_by: $('created-by').value || '相談員 デモ' };
+  if ($('corp-source').value) payload.source_message_id = $('corp-source').value;
+  state.corp.sending = true; $('corp-send').disabled = true;
+  try {
+    await api('/api/office-messages', { method: 'POST', body: payload });
+    toast(`${officeById(to).name} に送信しました`, 'ok');
+    if (oid === state.office) { $('corp-title').value = ''; $('corp-body').value = ''; $('corp-source').value = ''; corpStatus(''); }
+    await pollCorp();
+  } catch (e) { toast('送信に失敗しました: ' + e.message); }
+  finally { state.corp.sending = false; $('corp-send').disabled = false; }
+}
+async function corpAckClick(ev) {
+  const b = ev.target.closest('[data-testid=corp-ack]'); if (!b) return;
+  b.disabled = true;
+  try {
+    await api(`/api/office-messages/${encodeURIComponent(b.dataset.id)}/ack`, { method: 'POST', body: { staff_name: $('created-by').value || '相談員 デモ' } });
+    toast('確認を記録しました', 'ok');
+    await pollCorp();
+  } catch (e) { b.disabled = false; toast('確認の記録に失敗しました: ' + e.message); }
+}
+async function pollCorp() {
+  const oid = state.office;
+  try {
+    const d = await api('/api/office-messages' + officeQ());
+    if (oid !== state.office) return;
+    state.corp.inbox = Array.isArray(d.inbox) ? d.inbox : []; state.corp.outbox = Array.isArray(d.outbox) ? d.outbox : [];
+    state.corp.loaded = true;
+    renderCorpBadges();
+    if (currentRoute().name === 'corp') renderCorp();
+  } catch { /* 旧バックエンド等では静かに無視 */ }
+}
+function renderCorpBadges() {
+  const n = state.corp.inbox.filter((x) => !x.acknowledged_at).length;
+  document.querySelectorAll('.nav-badge').forEach((b) => { b.hidden = !n; b.textContent = n; b.setAttribute('aria-label', `未確認 ${n}件`); });
+}
+function renderCorp() {
+  const to = $('corp-to');
+  if (!to.options.length) corpResetForm();
+  renderCorpSource();
+  const c = state.corp;
+  setHtml($('corp-inbox'), c.inbox.length ? c.inbox.map((x) => {
+    const wait = !x.acknowledged_at;
+    return `<article class="corp-item ${wait ? 'is-wait' : 'is-ok'}" data-testid="corp-inbox-item" data-id="${esc(x.id)}" data-acked="${wait ? '0' : '1'}">
+      <div class="corp-item-head"><b data-testid="corp-item-title">${esc(x.title)}</b>
+        ${wait ? `<span class="corp-badge wait" data-testid="corp-unacked">${ico('alert')}未確認</span>` : `<span class="corp-badge ok" data-testid="corp-acked">${ico('check')}確認済 ${esc(fmtTime(x.acknowledged_at))}</span>`}</div>
+      <div class="corp-meta">${esc(x.from_office.name)} ／ ${esc(x.created_by)} ／ ${esc(fmtFull(x.created_at))}</div>
+      <p class="corp-body">${esc(x.body)}</p>
+      ${wait ? `<button type="button" class="btn btn-primary corp-ack" data-testid="corp-ack" data-id="${esc(x.id)}">確認しました</button>` : `<div class="corp-meta">確認者 ${esc(x.acknowledged_by || '—')}</div>`}
+    </article>`;
+  }).join('') : '<div class="placeholder" data-testid="corp-inbox-empty">他の事業所からの連絡はまだありません。</div>');
+  setHtml($('corp-outbox'), c.outbox.length ? c.outbox.map((x) => {
+    const ok = !!x.acknowledged_at;
+    return `<article class="corp-item ${ok ? 'is-ok' : 'is-wait'}" data-testid="corp-outbox-item" data-id="${esc(x.id)}" data-acked="${ok ? '1' : '0'}">
+      <div class="corp-item-head"><b data-testid="corp-item-title">${esc(x.title)}</b>
+        ${ok ? `<span class="corp-badge ok" data-testid="corp-status">${ico('check')}確認済 ${esc(fmtTime(x.acknowledged_at))}</span>` : `<span class="corp-badge wait" data-testid="corp-status">${ico('alert')}未確認</span>`}</div>
+      <div class="corp-meta">送信先 ${esc(x.to_office.name)} ／ ${esc(x.created_by)} ／ ${esc(fmtFull(x.created_at))}${ok && x.acknowledged_by ? ` ／ 確認者 ${esc(x.acknowledged_by)}` : ''}</div>
+      <p class="corp-body">${esc(clip(x.body, 120))}</p>
+    </article>`;
+  }).join('') : '<div class="placeholder" data-testid="corp-outbox-empty">まだ他の事業所へ連絡していません。</div>');
+}
+
 // ---------- router ----------
 function currentRoute() {
   const h = (location.hash || '').replace(/^#\/?/, '');
   const [name, ...rest] = h.split('/');
   if (name === 'new') return { name: 'new' };
+  if (name === 'corp') return { name: 'corp' };
   if (name === 'deliveries') return { name: 'deliveries', id: rest.length ? decodeURIComponent(rest.join('/')) : null };
   return { name: 'home' };
 }
@@ -588,11 +757,14 @@ function renderViews(flashIds = new Set()) {
   const r = currentRoute();
   if (r.name === 'home') renderHome();
   else if (r.name === 'deliveries') renderDeliveries(flashIds);
+  else if (r.name === 'corp') renderCorp();
 }
 
 async function pollOnce() {
   try {
-    const msgs = await api('/api/messages');
+    const oid = state.office;
+    const msgs = await api('/api/messages' + officeQ());
+    if (oid !== state.office) return;   // 取得中に事業所が切り替わった
     state.messages = msgs;
     const acked = new Set(); msgs.forEach((m) => (m.deliveries || []).forEach((d) => d.acknowledged_at && acked.add(d.id)));
     const flash = new Set();
@@ -614,12 +786,18 @@ async function init() {
   $('dl-all').addEventListener('click', () => { state.dlAll = true; renderViews(); });
   window.addEventListener('hashchange', route);
   $('today-label').querySelector('span').textContent = todayLabel();
+  $('office-select').addEventListener('change', (e) => switchOffice(e.target.value));
+  $('corp-form').addEventListener('submit', (e) => { e.preventDefault(); corpSend(); });
+  $('corp-draft').addEventListener('click', corpDraft);
+  $('corp-source').addEventListener('change', corpPickSource);
+  $('corp-inbox').addEventListener('click', corpAckClick);
   renderQuick(); renderProposal(); route();
   loadHealth(); loadSamples();
-  try { (await api('/api/staff')).forEach((s) => state.staff.set(s.id, s)); } catch (e) { toast('職員一覧を取得できません: ' + e.message); }
-  setupCreatedBy();
-  await pollOnce();
+  await loadOffices();
+  await loadStaff();
+  await Promise.all([pollOnce(), pollCorp()]);
   setInterval(pollOnce, 3000);
+  setInterval(pollCorp, 5000);
   setInterval(loadHealth, 15000);
 }
 init();

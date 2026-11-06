@@ -21,6 +21,7 @@ h1,h2,h3{margin:0}
 .brand-name{font-weight:800;font-size:19px;letter-spacing:.06em}
 .facility{display:inline-flex;align-items:center;gap:8px;padding-left:22px;border-left:1px solid var(--line);color:var(--ink);font-weight:500;height:30px;margin-right:auto}
 .facility .ic{width:20px;height:20px;color:var(--sub)}
+.facility select{width:auto;min-width:200px;padding:6px 10px;font-size:15px;font-weight:600;border-radius:8px}
 .today{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-size:15px}
 .today .ic{width:20px;height:20px;color:var(--sub)}
 .operator{display:inline-flex;align-items:center;gap:8px;padding-left:20px;border-left:1px solid var(--line);font-size:14px;color:var(--sub);font-weight:600}
@@ -285,6 +286,33 @@ textarea:focus,input:focus,select:focus{outline:3px solid #149a7f33;border-color
 .toast.ok{background:var(--brand-d)}
 .tabbar{display:none}
 
+/* ---------- 法人内連絡 ---------- */
+.nav-badge{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--orange);color:#fff;font-size:13px;line-height:22px;text-align:center}
+.sidenav a{position:relative}
+body[data-route=deliveries] .sidenav .nav-badge{position:absolute;top:2px;right:2px;margin:0}
+.corp-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+.corp-form{grid-column:1/-1}
+.corp-form form{max-width:760px}
+.corp-form .hint{margin:0 0 4px}
+.corp-draft{display:inline-flex;align-items:center;gap:8px;border-color:var(--brand-line);background:var(--brand-l);color:var(--brand-d)}
+.corp-draft .ic{width:20px;height:20px}
+.corp-draft-status{margin-top:10px}
+.corp-draft-status .busy{color:var(--brand-d);font-weight:700}
+.corp-list{display:flex;flex-direction:column;gap:10px}
+.corp-item{border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
+.corp-item.is-wait{border-left-color:var(--orange);background:#fffaf3}
+.corp-item.is-ok{border-left-color:var(--brand)}
+.corp-item-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:4px}
+.corp-item-head b{font-size:16px}
+.corp-meta{color:var(--sub);font-size:14px}
+.corp-body{white-space:pre-wrap;word-break:break-word;margin:6px 0 8px;font-size:15px}
+.corp-badge{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;padding:2px 10px;border-radius:999px;font-weight:800;font-size:14px}
+.corp-badge .ic{width:16px;height:16px}
+.corp-badge.wait{background:var(--orange-l);color:var(--orange-d);border:1px solid #f0c48f}
+.corp-badge.ok{background:var(--brand-l);color:var(--brand-d);border:1px solid var(--brand-line)}
+.corp-ack{min-height:44px}
+
+
 /* ---------- 狭い PC / タブレット ---------- */
 @media (max-width:1180px){
   .today{display:none}
@@ -295,10 +323,18 @@ textarea:focus,input:focus,select:focus{outline:3px solid #149a7f33;border-color
 
 /* ---------- スマホ（≤900px） ---------- */
 @media (max-width:900px){
-  .topbar{height:auto;display:grid;grid-template-columns:1fr auto;grid-template-areas:"brand new" "fac fac" "op op";gap:6px 12px;padding:10px 16px}
+  .topbar{height:auto;display:grid;grid-template-columns:1fr auto;grid-template-areas:"brand new" "fac fac" "today today" "op op";gap:6px 12px;padding:10px 16px}
   .brand{grid-area:brand}.btn-new{grid-area:new;height:44px}
-  .facility{grid-area:fac;border:none;padding:0;margin:0;height:auto;font-size:14px;color:var(--sub)}
-  .today{display:inline-flex;grid-area:fac;justify-self:end;font-size:14px;color:var(--sub)}
+  .facility{grid-area:fac;border:none;padding:0;margin:0;height:auto;font-size:14px;color:var(--sub);min-width:0}
+  .facility select{flex:1;min-width:0;min-height:44px;font-size:16px}
+  .facility{display:flex;align-items:center;gap:8px}
+  .corp-grid{grid-template-columns:minmax(0,1fr)}
+  .corp-draft,.corp-form .btn-send{min-height:44px;font-size:16px}
+  .corp-meta,.corp-body,.corp-badge{font-size:16px}
+  .corp-form .btn-row .btn{flex:1 1 100%}
+  .tabbar a{position:relative}
+  .tabbar .nav-badge{position:absolute;top:4px;left:calc(50% + 8px);margin:0}
+  .today{display:inline-flex;grid-area:today;justify-self:start;font-size:14px;color:var(--sub)}
   .operator{grid-area:op;border:none;padding:0;width:100%}
   .operator span{white-space:nowrap}
   .operator select{flex:1;min-width:0;min-height:44px;font-size:16px}
@@ -306,7 +342,7 @@ textarea:focus,input:focus,select:focus{outline:3px solid #149a7f33;border-color
   .shell{display:block}
   .main{padding:14px 16px 96px}
   .app-footer{padding:12px 16px 84px}
-  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);box-shadow:0 -2px 10px #0000000d;padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);box-shadow:0 -2px 10px #0000000d;padding-bottom:env(safe-area-inset-bottom)}
   .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:62px;text-decoration:none;color:var(--sub);font-size:16px;font-weight:700}
   .tabbar a span{font-size:16px;line-height:1.2}
   .tabbar a.on{color:var(--brand-d);background:var(--brand-l)}

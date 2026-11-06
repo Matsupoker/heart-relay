@@ -3,7 +3,7 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const BASE = process.env.BASE || 'http://localhost:8790/';
 const S = __dirname + '/screenshots/';
-fs.mkdirSync(S, { recursive: true });
+fs.mkdirSync(S + 'ui/', { recursive: true });
 let fails = 0;
 const check = (name, ok, extra = '') => { if (!ok) fails++; console.log((ok ? 'PASS ' : 'FAIL ') + name + (extra ? '  ' + extra : '')); };
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
@@ -18,9 +18,9 @@ const T = (id) => `[data-testid=${id}]`;
   await p.goto(BASE); await p.waitForTimeout(800);
   check('既定ルートは #/home', await p.isVisible(T('view-home')) && !(await p.isVisible(T('view-new'))));
   check('ナビ: ホームがハイライト', (await p.getAttribute(T('nav-home'), 'aria-current')) === 'page');
-  check('固定文字列の事業所名', (await p.textContent(T('facility'))).includes('デイサービス（架空）'));
+  check('ヘッダの事業所セレクト（既定 A・架空名）', (await p.inputValue(T('office-select'))) === 'A' && (await p.$eval(T('office-select'), e => e.selectedOptions[0].textContent)).includes('デイサービス'));
   check('日付表示（JST）', /^\s*\d{4}年\d{1,2}月\d{1,2}日（.）\s*$/.test(await p.textContent(T('today-label'))));
-  check('ベル/再通知/法人内連絡は無い', !(await p.content()).includes('再通知') && !(await p.content()).includes('法人内連絡'));
+  check('ベル/再通知は無い', !(await p.content()).includes('再通知'));
   check('PC幅でタブバー非表示', !(await p.isVisible(T('tabbar'))));
   check('共有ボードリンク', (await p.getAttribute(T('nav-board'), 'href')) === '/board.html' && (await p.getAttribute(T('nav-board'), 'target')) === '_blank');
   check('ホーム: 件数0（空）', (await p.textContent(`${T('home-stat-sent')} b`)) === '0' && (await p.locator(T('home-row')).count()) === 0);
@@ -209,6 +209,79 @@ const T = (id) => `[data-testid=${id}]`;
   check('全員確認で最終ステップ達成', await p.evaluate(() => [...document.querySelectorAll('[data-testid=sent-message]')].some(e => e.dataset.allAcked === '1' && e.querySelectorAll('[data-testid=dl-step][data-done="1"]').length === 4)));
   await p.screenshot({ path: S + '12-final-desktop.png' });
 
+
+  // --- (f) 法人内連絡（Issue #2）---
+  const dlg = []; p.on('dialog', d => dlg.push(d.message()));
+  await p.goto(BASE + '#/home'); await p.waitForTimeout(900);
+  check('(f) 事業所セレクト 3件（A/B/C）', (await p.locator(`${T('office-select')} option`).count()) === 3);
+  await p.click(T('nav-corp')); await p.waitForSelector(T('view-corp'), { state: 'visible' });
+  check('(f) ナビ「法人内連絡」→ #/corp', p.url().endsWith('#/corp') && (await p.getAttribute(T('nav-corp'), 'aria-current')) === 'page');
+  check('(f) 送信先は自事業所以外（B, C）', JSON.stringify(await p.$$eval(`${T('corp-to')} option`, o => o.map(x => x.value))) === '["B","C"]');
+  check('(f) 受信・送信履歴は空状態の文言', await p.isVisible(T('corp-inbox-empty')) && await p.isVisible(T('corp-outbox-empty')));
+  await p.selectOption(T('corp-to'), 'B');
+  const nsrc = await p.locator(`${T('corp-source')} option`).count();
+  check('(f) 内容の元に A の配信済み連絡が並ぶ', nsrc === 4, 'n=' + nsrc);
+  await p.selectOption(T('corp-source'), { index: 1 });
+  const srcId = await p.inputValue(T('corp-source'));
+  const srcBody = await p.inputValue(T('corp-body'));
+  check('(f) 既存の連絡を選ぶと本文に要約が入る', srcBody.length > 10 && !/除外|宛先/.test(srcBody), srcBody.replace(/\n/g, ' / ').slice(0, 70));
+  // 失敗表示
+  await p.fill(T('corp-body'), 'DRAFTFAIL 要点');
+  await p.click(T('corp-draft'));
+  check('(f) 作成中表示・ボタン無効', await p.isVisible(T('corp-draft-busy')) && await p.isDisabled(T('corp-draft')));
+  await p.waitForSelector(T('corp-draft-error'));
+  check('(f) 失敗時はエラー表示・入力は保持', (await p.inputValue(T('corp-body'))).includes('DRAFTFAIL') && !(await p.isDisabled(T('corp-draft'))));
+  await p.fill(T('corp-body'), srcBody);
+  // AI 文面支援
+  const [dreq] = await Promise.all([p.waitForRequest(r => /office-messages\/draft$/.test(r.url())), p.click(T('corp-draft'))]);
+  const db = JSON.parse(dreq.postData());
+  check('(f) /draft に from/to/source/notes を送る', db.from_office_id === 'A' && db.to_office_id === 'B' && db.source_message_id === srcId && db.notes === srcBody);
+  await p.waitForFunction(() => document.querySelector('[data-testid=corp-title]').value.startsWith('【ご連絡】'));
+  check('(f) 確認ダイアログ後に件名・本文が案に置き換わる', dlg.some(x => x.startsWith('この案を反映しますか？')) && (await p.inputValue(T('corp-body'))).includes('ご確認のほどよろしく') && !(await p.inputValue(T('corp-body'))).includes(srcBody));
+  check('(f) 案の反映だけでは送信されない', (await p.evaluate(() => fetch('/api/office-messages?office=A').then(r => r.json()))).outbox.length === 0);
+  await p.fill(T('corp-body'), (await p.inputValue(T('corp-body'))) + '\n（職員追記：電話でも連絡済みです）');
+  await p.fill(T('corp-title'), '【編集済】送迎の変更について');
+  const [oreq] = await Promise.all([p.waitForRequest(r => /\/api\/office-messages$/.test(r.url()) && r.method() === 'POST'), p.click(T('corp-send'))]);
+  const ob = JSON.parse(oreq.postData());
+  check('(f) 送信 payload', ob.from_office_id === 'A' && ob.to_office_id === 'B' && ob.title === '【編集済】送迎の変更について' && ob.body.includes('職員追記') && ob.source_message_id === srcId && ob.created_by === '田中 相談', JSON.stringify(ob).slice(0, 120));
+  check('(f) 送信前の確認ダイアログに送信先と件名', dlg.some(x => x.includes('老健 やすらぎ') && x.includes('【編集済】送迎の変更について')));
+  await p.waitForSelector(T('corp-outbox-item'));
+  check('(f) 送信履歴に表示・未確認', (await p.textContent(T('corp-outbox'))).includes('老健 やすらぎ') && (await p.textContent(T('corp-status'))).includes('未確認'));
+  check('(f) トーストとフォーム初期化', (await p.locator(T('toast')).last().textContent()).includes('送信しました') && (await p.inputValue(T('corp-title'))) === '' && (await p.inputValue(T('corp-body'))) === '' && (await p.inputValue(T('corp-source'))) === '');
+  await p.screenshot({ path: S + 'ui/corp-1440.png', fullPage: true });
+  // B に切替
+  await p.selectOption(T('office-select'), 'B');
+  await p.waitForSelector(T('corp-inbox-item'));
+  check('(f) B の受信に表示・未確認バッジ', (await p.textContent(T('corp-inbox'))).includes('【編集済】送迎の変更について') && (await p.locator(T('corp-unacked')).count()) === 1 && (await p.textContent(T('corp-nav-badge'))) === '1');
+  check('(f) 職員 select が B の職員に切替', (await p.locator(`${T('created-by')} option`).allTextContents()).some(x => x.includes('青木 相談')) && !(await p.locator(`${T('created-by')} option`).allTextContents()).some(x => x.includes('田中 相談')));
+  check('(f) 共有ボードリンクが B', (await p.getAttribute(T('nav-board'), 'href')) === '/board.html?office=B');
+  await p.reload(); await p.waitForTimeout(900);
+  check('(f) 事業所の選択が localStorage で保持', (await p.inputValue(T('office-select'))) === 'B' && p.url().endsWith('#/corp'));
+  const [areq] = await Promise.all([p.waitForRequest(r => /office-messages\/[^/]+\/ack$/.test(r.url())), p.click(T('corp-ack'))]);
+  check('(f) ack に操作者名', JSON.parse(areq.postData()).staff_name.length > 0, areq.postData());
+  await p.waitForSelector(T('corp-acked'));
+  check('(f) 確認済になりボタンが消える', (await p.locator(T('corp-ack')).count()) === 0 && (await p.locator(T('corp-nav-badge')).isHidden()));
+  // B の配信管理・ホーム・ボード・stats に A の連絡が出ない
+  await p.click(T('nav-deliveries')); await p.click(T('dl-filter-all')); await p.waitForTimeout(300);
+  const dlB = await p.locator(T('sent-list')).textContent();
+  check('(f) B の配信管理に A の連絡が無い', (await p.locator(T('dl-list-item')).count()) === 1 && !dlB.includes('新田') && !dlB.includes('送迎'), dlB.replace(/\s+/g, ' ').slice(0, 60));
+  await p.click(T('nav-home')); await p.waitForTimeout(400);
+  const homeB = await p.locator(T('sent-today')).textContent();
+  check('(f) B のホームは B の連絡のみ', (await p.locator(T('home-row')).count()) === 1 && homeB.includes('[B]'), homeB.replace(/\s+/g, ' ').slice(0, 60));
+  const bp = await b.newPage(); await bp.goto(BASE + 'board.html?office=B'); await bp.waitForSelector('[data-testid=board-post]');
+  const bt = await bp.locator('[data-testid=board-post]').allTextContents();
+  check('(f) board.html?office=B は B の掲示のみ', bt.length === 1 && bt[0].includes('[B]'), bt.join('|').slice(0, 60));
+  await bp.goto(BASE + 'board.html?office=A'); await bp.waitForSelector('[data-testid=board-post]');
+  check('(f) board.html?office=A は A の掲示のみ', (await bp.locator('[data-testid=board-post]').allTextContents()).every(t => !t.includes('[B]') && !t.includes('[C]')));
+  await bp.close();
+  const stB = await p.evaluate(() => fetch('/api/stats?office=B').then(r => r.json()));
+  check('(f) /api/stats?office=B は B のみ', stB.messages === 1);
+  // A に戻る
+  await p.selectOption(T('office-select'), 'A'); await p.click(T('nav-corp'));
+  await p.waitForSelector(T('corp-outbox-item'));
+  check('(f) A に戻ると送信履歴が確認済', (await p.textContent(T('corp-status'))).includes('確認済') && (await p.getAttribute(`${T('corp-outbox-item')}`, 'data-acked')) === '1');
+  check('(f) A のホームは A の連絡のみ', await (async () => { await p.click(T('nav-home')); await p.waitForTimeout(400); return (await p.locator(T('home-row')).count()) === 3 && !(await p.locator(T('sent-today')).textContent()).includes('[B]'); })());
+
   // --- (e) スマホ 390x844 ---
   const mctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   const m = await mctx.newPage();
@@ -216,7 +289,7 @@ const T = (id) => `[data-testid=${id}]`;
   await m.goto(BASE); await m.waitForTimeout(1200);
   const overflow = () => m.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const small = (sel) => m.evaluate((sel) => [...document.querySelectorAll(sel)].filter(e => e.offsetParent).map(e => ({ t: e.dataset.testid || e.id || e.className, h: Math.round(e.getBoundingClientRect().height), f: parseFloat(getComputedStyle(e).fontSize) })).filter(x => x.h < 44 || x.f < 16), sel);
-  check('(e) 下部タブ表示・サイドナビ非表示', await m.isVisible(T('tab-home')) && await m.isVisible(T('tab-new')) && await m.isVisible(T('tab-deliveries')) && await m.isVisible(T('link-board')) && !(await m.isVisible(T('sidenav'))));
+  check('(e) 下部タブ表示・サイドナビ非表示', await m.isVisible(T('tab-corp')) && await m.isVisible(T('tab-home')) && await m.isVisible(T('tab-new')) && await m.isVisible(T('tab-deliveries')) && await m.isVisible(T('link-board')) && !(await m.isVisible(T('sidenav'))));
   check('(e) ホーム表示・横スクロールなし', await m.isVisible(T('view-home')) && (await overflow()) <= 0, 'overflow=' + await overflow());
   let sm = await small('.btn-new,.hero-cta,.hero-alt a,.more,.hr-link,.operator select,.tabbar a');
   check('(e) ホーム: 44px以上・16px以上', sm.length === 0, JSON.stringify(sm));
@@ -256,6 +329,19 @@ const T = (id) => `[data-testid=${id}]`;
   await m.click(T('tab-new')); await m.waitForURL(/#\/new$/); await m.click(T('tab-deliveries')); await m.waitForURL(/#\/deliveries$/);
   check('(e) タブ往復', m.url().endsWith('#/deliveries'));
   check('(e) 横スクロールなし(一覧)', (await overflow()) <= 0);
+
+  // --- (f) スマホで #/corp ---
+  await m.click(T('tab-corp')); await m.waitForURL(/#\/corp$/); await m.waitForSelector(T('corp-title'), { state: 'visible' });
+  check('(f) 法人内タブ → #/corp・横スクロールなし', m.url().endsWith('#/corp') && (await overflow()) <= 0, 'overflow=' + await overflow());
+  await m.selectOption(T('corp-to'), 'C'); await m.fill(T('corp-title'), 'スマホからの連絡'); await m.fill(T('corp-body'), '本文テストです。');
+  sm = await small('.corp-form button,.corp-form select,.corp-form input,.corp-form textarea,.facility select,.corp-ack');
+  check('(f) 法人内フォーム: 44px以上・16px以上', sm.length === 0, JSON.stringify(sm));
+  await m.click(T('corp-send')); await m.waitForSelector(T('corp-outbox-item'));
+  check('(f) スマホで送信でき履歴に出る', (await m.textContent(T('corp-outbox'))).includes('ひだまり病院') || (await m.textContent(T('corp-outbox'))).includes('スマホからの連絡'));
+  sm = await small('.corp-box .corp-meta,.corp-box .corp-body,.corp-box .corp-badge');
+  check('(f) 履歴: 16px以上', sm.every(x => x.f >= 16), JSON.stringify(sm.filter(x => x.f < 16)));
+  check('(f) 横スクロールなし(履歴)', (await overflow()) <= 0, 'overflow=' + await overflow());
+  await m.screenshot({ path: S + 'ui/corp-390.png', fullPage: true });
 
   console.log('errors', JSON.stringify(errs));
   check('JSエラーなし', errs.length === 0);

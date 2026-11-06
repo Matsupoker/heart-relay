@@ -1,4 +1,4 @@
-// 開発用モックサーバ（Node 22, 依存なし）。web/ を配信し docs/api.md の API を偽装する。
+// 開発用モックサーバ v3（Node 22, 依存なし）。web/ を配信し docs/api.md と Issue #2 契約（事業所・法人内連絡）の API を偽装する。
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -88,8 +88,27 @@ function dummyPng(w = 240, h = 150) {
 const PNG = dummyPng();
 const attachments = [];
 
+// ---- 事業所（v3、すべて架空）----
+const offices = [
+  { id: 'A', name: 'デイサービス ひだまり', kind: 'デイサービス' },
+  { id: 'B', name: '老健 やすらぎ', kind: '老健' },
+  { id: 'C', name: 'ひだまり病院', kind: '病院' },
+];
+const officeOf = (id) => offices.find((o) => o.id === id) || null;
+staff.forEach((s) => { s.office_id = 'A'; });
+[
+  ['b01', 'B', '青木 相談', '生活相談員', ['入退所調整', '家族連絡']],
+  ['b02', 'B', '石川 看護', '看護師', ['健康管理', '服薬管理']],
+  ['b03', 'B', '前田 介護', '介護職員', ['入浴介助', '食事介助']],
+  ['c01', 'C', '岡田 連携', '地域連携室', ['退院調整', '施設連絡']],
+  ['c02', 'C', '長谷川 看護', '看護師', ['病棟管理']],
+  ['c03', 'C', '藤井 医事', '医事課', ['受付', '請求']],
+].forEach(([id, office_id, name, role, duties]) => staff.push({ id, name, role, duties, active: true, ledger_staff_id: null, transport_routes: [], office_id }));
+const officeQ = (url) => url.searchParams.get('office') || 'A';
+
 let messages = [];
 let boardPosts = [];
+let officeMessages = [];
 let seq = 1;
 let deliveries = [];
 const DELAY = Number(process.env.MOCK_DELAY ?? 1000);
@@ -162,6 +181,19 @@ function parseMultipart(buf, ctype) {
 }
 const kindOf = (fn, mime) => { const e = path.extname(fn).toLowerCase(); if (/^image\//.test(mime) || ['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(e)) return 'image'; return { '.pdf': 'pdf', '.txt': 'txt', '.docx': 'docx', '.xls': 'xls', '.xlsx': 'xlsx' }[e] || null; };
 
+// B・C の既存データ（架空）。A の画面に混入しないことの確認用
+messages.push(
+  { id: 'mB001', office_id: 'B', raw_text: 'Bの入所者の入浴日を変更します。', source: '手入力', created_by: '青木 相談', created_at: now(), status: 'sent', analyzer: 'mock', model: null, error: null, usage: null, resident_id: null, resident_match: null,
+    analysis: { summary: '[B] 入浴日の変更を共有', categories: ['入浴'], urgency: 'low', resident_id: null, deadline: null, required_actions: ['入浴表の更新'], audience: 'both', recipients: [], board_post: null, board_summary: '', excluded_note: '', excluded: [] } },
+  { id: 'mC001', office_id: 'C', raw_text: 'Cの病棟の面会時間を変更します。', source: '手入力', created_by: '岡田 連携', created_at: now(), status: 'sent', analyzer: 'mock', model: null, error: null, usage: null, resident_id: null, resident_match: null,
+    analysis: { summary: '[C] 面会時間の変更を共有', categories: ['面会'], urgency: 'low', resident_id: null, deadline: null, required_actions: [], audience: 'both', recipients: [], board_post: null, board_summary: '', excluded_note: '', excluded: [] } },
+);
+deliveries.push({ id: 'dB001', message_id: 'mB001', staff_id: 'b03', staff_name: '前田 介護', staff_role: '介護職員', title: '入浴日の変更', body: '入浴表を確認してください。', action_required: '入浴表の更新', reason: '入浴担当のため', urgency: 'low', categories: ['入浴'], created_at: now(), acknowledged_at: null });
+boardPosts.push({ id: 'bB001', office_id: 'B', message_id: 'mB001', title: '[B] 入浴日の変更', body: 'B事業所の掲示です。', urgency: 'low', categories: ['入浴'], resident_name: null, created_at: now(), until: null, archived_at: null });
+boardPosts.push({ id: 'bC001', office_id: 'C', message_id: 'mC001', title: '[C] 面会時間の変更', body: 'C事業所の掲示です。', urgency: 'low', categories: ['面会'], resident_name: null, created_at: now(), until: null, archived_at: null });
+
+const ofMsg = (x) => ({ id: x.id, from_office: officeOf(x.from_office_id), to_office: officeOf(x.to_office_id), source_message_id: x.source_message_id, title: x.title, body: x.body, created_by: x.created_by, created_at: x.created_at, acknowledged_at: x.acknowledged_at, acknowledged_by: x.acknowledged_by });
+
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
@@ -169,7 +201,32 @@ const server = http.createServer(async (req, res) => {
     if (p.startsWith('/api/')) {
       let m;
       if (p === '/api/health') return json(res, 200, { ok: true, analyzer: process.env.MOCK_CLAUDE ? 'claude' : 'mock', model: process.env.MOCK_CLAUDE ? 'claude-sonnet-4-5' : null, time: now(), residents: residents.length });
-      if (p === '/api/staff') return json(res, 200, staff);
+      if (p === '/api/offices') return json(res, 200, offices);
+      if (p === '/api/staff') return json(res, 200, staff.filter((s) => s.office_id === officeQ(url)));
+      if (p === '/api/office-messages' && req.method === 'GET') {
+        const o = officeQ(url); const nw = [...officeMessages].reverse().map(ofMsg);
+        return json(res, 200, { inbox: nw.filter((x) => x.to_office.id === o), outbox: nw.filter((x) => x.from_office.id === o) });
+      }
+      if (p === '/api/office-messages/draft' && req.method === 'POST') {
+        const b = await body(req); await sleep(DELAY);
+        if (!officeOf(b.from_office_id) || !officeOf(b.to_office_id) || b.from_office_id === b.to_office_id) return json(res, 400, { error: '事業所の指定が正しくありません', code: 'bad_request' });
+        if (/DRAFTFAIL/.test(b.notes || '')) return json(res, 502, { error: 'モック: 文面の作成に失敗しました' });
+        const src = messages.find((x) => x.id === b.source_message_id);
+        const gist = (src && src.analysis && src.analysis.summary) || String(b.notes || '').split('\n')[0].slice(0, 60);
+        return json(res, 200, { title: `【ご連絡】${officeOf(b.from_office_id).name}より（AI整形案）`, body: `${officeOf(b.to_office_id).name} ご担当者様\n\nお世話になっております。${officeOf(b.from_office_id).name}です。\n次の件についてご連絡いたします。\n\n${gist}\n\nお手数ですが、ご確認のほどよろしくお願いいたします。`, model: 'mock', usage: { input_tokens: 900, output_tokens: 300, est_cost_usd: 0.006 } });
+      }
+      if (p === '/api/office-messages' && req.method === 'POST') {
+        const b = await body(req);
+        if (!officeOf(b.from_office_id) || !officeOf(b.to_office_id) || b.from_office_id === b.to_office_id) return json(res, 400, { error: '事業所の指定が正しくありません', code: 'bad_request' });
+        if (!String(b.title || '').trim() || !String(b.body || '').trim()) return json(res, 400, { error: '件名と本文は必須です', code: 'bad_request' });
+        const x = { id: uid('o'), from_office_id: b.from_office_id, to_office_id: b.to_office_id, source_message_id: b.source_message_id || null, title: b.title, body: b.body, created_by: b.created_by || '', created_at: now(), acknowledged_at: null, acknowledged_by: null };
+        officeMessages.push(x); return json(res, 200, ofMsg(x));
+      }
+      if ((m = p.match(/^\/api\/office-messages\/([^/]+)\/ack$/)) && req.method === 'POST') {
+        const x = officeMessages.find((y) => y.id === m[1]); if (!x) return json(res, 404, { error: 'not found' });
+        const b = await body(req); if (!x.acknowledged_at) { x.acknowledged_at = now(); x.acknowledged_by = b.staff_name || ''; }
+        return json(res, 200, ofMsg(x));
+      }
       if (p === '/api/residents' && req.method === 'GET') {
         const q = norm(url.searchParams.get('q') || ''); const limit = Number(url.searchParams.get('limit') || 20);
         const list = q ? residents.filter((r) => norm(r.name).includes(q) || r.id.includes(q) || r.kana.normalize('NFKC').replace(/\s+/g, '').includes(q)) : residents;
@@ -179,10 +236,12 @@ const server = http.createServer(async (req, res) => {
       if ((m = p.match(/^\/api\/residents\/([^/]+)$/))) { const r = residents.find((x) => x.id === m[1]); return r ? json(res, 200, r) : json(res, 404, { error: 'not found' }); }
       if (p === '/api/demo-messages') return json(res, 404, { error: 'not found' });
       if (p === '/api/stats') {
-        const acked = deliveries.filter((d) => d.acknowledged_at).length;
-        return json(res, 200, { messages: messages.length, deliveries: deliveries.length, acked, unacked: deliveries.length - acked, board_posts: boardPosts.length });
+        const o = officeQ(url); const ids = new Set(messages.filter((x) => x.office_id === o).map((x) => x.id));
+        const ds = deliveries.filter((d) => ids.has(d.message_id));
+        const acked = ds.filter((d) => d.acknowledged_at).length;
+        return json(res, 200, { messages: ids.size, deliveries: ds.length, acked, unacked: ds.length - acked, board_posts: boardPosts.filter((b) => b.office_id === o).length });
       }
-      if (p === '/api/board') return json(res, 200, activeBoard());
+      if (p === '/api/board') return json(res, 200, activeBoard().filter((b) => b.office_id === officeQ(url)));
       if ((m = p.match(/^\/api\/board\/([^/]+)\/archive$/)) && req.method === 'POST') { const b = boardPosts.find((x) => x.id === m[1]); if (!b) return json(res, 404, { error: 'not found' }); b.archived_at = now(); return json(res, 200, b); }
       if (p === '/api/intake' && req.method === 'POST') {
         const f = parseMultipart(await rawBody(req), req.headers['content-type']);
@@ -202,11 +261,11 @@ const server = http.createServer(async (req, res) => {
         if (m[2]) { res.writeHead(200, { 'Content-Type': 'image/png' }); return res.end(PNG); }
         const { _bytes, ...pub } = a; return json(res, 200, pub);
       }
-      if (p === '/api/messages' && req.method === 'GET') return json(res, 200, [...messages].reverse().map(full));
+      if (p === '/api/messages' && req.method === 'GET') return json(res, 200, [...messages].filter((x) => x.office_id === officeQ(url)).reverse().map(full));
       if (p === '/api/messages' && req.method === 'POST') {
         const b = await body(req);
         if (!b.raw_text || !String(b.raw_text).trim()) return json(res, 400, { error: 'raw_text は必須です', code: 'bad_request' });
-        m = { id: uid('m'), raw_text: b.raw_text, source: b.source || '手入力', created_by: b.created_by || '相談員 デモ', created_at: now(), status: 'analyzing', analyzer: null, model: null, error: null, usage: null, resident_id: null, resident_match: null, analysis: null };
+        m = { id: uid('m'), office_id: officeOf(b.office_id) ? b.office_id : 'A', raw_text: b.raw_text, source: b.source || '手入力', created_by: b.created_by || '相談員 デモ', created_at: now(), status: 'analyzing', analyzer: null, model: null, error: null, usage: null, resident_id: null, resident_match: null, analysis: null };
         (b.attachment_ids || []).forEach((id) => { const a = attachments.find((x) => x.id === id); if (a) a.message_id = m.id; });
         messages.push(m);
         if (b.resident_id !== undefined && b.resident_id !== null) { m.resident_id = b.resident_id || null; m.resident_match = null; }
@@ -232,7 +291,7 @@ const server = http.createServer(async (req, res) => {
             const s = staff.find((x) => x.id === r.staff_id);
             deliveries.push({ id: uid('d'), message_id: msg.id, staff_id: s.id, staff_name: s.name, staff_role: s.role, title: r.title, body: r.body, action_required: r.action_required, reason: r.reason, urgency: msg.analysis.urgency, categories: msg.analysis.categories, created_at: now(), acknowledged_at: null });
           }
-          if (b.board_post) boardPosts.push({ id: uid('b'), message_id: msg.id, title: b.board_post.title, body: b.board_post.body, urgency: msg.analysis.urgency, categories: msg.analysis.categories, resident_name: resOf(msg)?.name ?? null, created_at: now(), until: b.board_post.until || null, archived_at: null });
+          if (b.board_post) boardPosts.push({ id: uid('b'), office_id: msg.office_id, message_id: msg.id, title: b.board_post.title, body: b.board_post.body, urgency: msg.analysis.urgency, categories: msg.analysis.categories, resident_name: resOf(msg)?.name ?? null, created_at: now(), until: b.board_post.until || null, archived_at: null });
           msg.status = 'sent'; return json(res, 200, full(msg));
         }
       }

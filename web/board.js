@@ -1,6 +1,7 @@
 // 共有ボード（依存なし）。5 秒ごとに /api/board を取得し、変化があれば差し替える。操作要素は持たない。
 (() => {
   const POLL_MS = 5000;
+  const OFFICE = new URLSearchParams(location.search).get('office') || '';
   const URG = { high: '緊急', medium: '通常', low: '参考' };
   const $ = (id) => document.getElementById(id);
   const listEl = $('list');
@@ -64,7 +65,7 @@
 
   async function poll() {
     try {
-      const res = await fetch('/api/board', { cache: 'no-store' });
+      const res = await fetch('/api/board' + (OFFICE ? '?office=' + encodeURIComponent(OFFICE) : ''), { cache: 'no-store' });
       if (!res.ok) throw new Error(String(res.status));
       const posts = await res.json();
       // 期限切れは次回取得で消えるが、表示中の更新時刻を毎回更新する

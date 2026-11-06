@@ -24,6 +24,7 @@
     <symbol id="i-check-o" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l3 3 5.2-6"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><circle cx="12" cy="16.4" r=".6" fill="currentColor"/></symbol>
     <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+    <symbol id="i-corp" viewBox="0 0 24 24"><rect x="3.5" y="9" width="7" height="11" rx="1.2"/><rect x="13.5" y="4" width="7" height="16" rx="1.2"/><path d="M6 12.5h2M6 16h2M16 8h2M16 11.5h2M16 15h2"/></symbol>
     <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5.5 3 3.5H7l3-3.5z"/><path d="M12 13v7"/></symbol>
   </defs>
 </svg>
@@ -33,7 +34,9 @@
     <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.4C5.2 15.6 3 12 3 9c0-2.6 2-4.6 4.5-4.6 1.8 0 3.3.9 4.5 2.6 1.2-1.7 2.7-2.6 4.5-2.6C19 4.4 21 6.4 21 9c0 3-2.2 6.6-9 11.4z"/><path d="M7.2 11.2h3l1.4-2.4 2 4.2 1.4-1.8h2"/></svg>
     <span class="brand-name">HEART RELAY</span>
   </a>
-  <span class="facility" data-testid="facility"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg>デイサービス（架空）</span>
+  <label class="facility" data-testid="facility"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span class="sr-only">事業所</span>
+    <select id="office-select" data-testid="office-select" aria-label="事業所"><option value="A">デイサービス（架空）</option></select>
+  </label>
   <span class="today" id="today-label" data-testid="today-label"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg><span></span></span>
   <label class="operator"><span>入力者</span>
     <select id="created-by" data-testid="created-by"><option value="相談員 デモ">相談員 デモ</option></select>
@@ -46,7 +49,8 @@
     <a href="#/home" data-route="home" data-testid="nav-home" title="ホーム"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>ホーム</span></a>
     <a href="#/new" data-route="new" data-testid="nav-new" title="新規連絡"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>新規連絡</span></a>
     <a href="#/deliveries" data-route="deliveries" data-testid="nav-deliveries" title="配信管理"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg><span>配信管理</span></a>
-    <a href="/board.html" target="_blank" rel="noopener" data-testid="nav-board" title="共有ボード（新しいタブ）"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span>共有ボード</span></a>
+    <a href="#/corp" data-route="corp" data-testid="nav-corp" title="法人内連絡"><svg class="ic" aria-hidden="true"><use href="#i-corp"/></svg><span>法人内連絡</span><b class="nav-badge" data-testid="corp-nav-badge" hidden></b></a>
+    <a href="/board.html" id="nav-board" target="_blank" rel="noopener" data-testid="nav-board" title="共有ボード（新しいタブ）"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span>共有ボード</span></a>
   </nav>
 
   <main class="main">
@@ -132,6 +136,40 @@
         <article class="dl-detail-pane" id="dl-detail" data-testid="dl-detail"></article>
       </div>
     </section>
+
+    <!-- ================= 法人内連絡 ================= -->
+    <section class="view view-corp" id="view-corp" data-view="corp" data-testid="view-corp" hidden aria-labelledby="h-corp">
+      <div class="corp-grid">
+        <section class="col corp-form" aria-labelledby="h-corp">
+          <h2 id="h-corp"><span class="step">1</span>他の事業所へ連絡する</h2>
+          <p class="hint">送信は職員の操作でのみ行われます。AI は文面の案を作るだけで、自動では送信しません。</p>
+          <form id="corp-form" data-testid="corp-form" novalidate>
+            <label class="field-label" for="corp-to">送信先の事業所</label>
+            <select id="corp-to" data-testid="corp-to"></select>
+            <label class="field-label" for="corp-source">内容の元</label>
+            <select id="corp-source" data-testid="corp-source"><option value="">新規入力</option></select>
+            <p class="hint">「既存の連絡から選ぶ」と、要約と必要な対応を本文に転記します（宛先職員名・除外理由は含めません）。利用者の個人情報を含めるかは職員が判断し、本文を編集してください。</p>
+            <label class="field-label" for="corp-title">件名</label>
+            <input type="text" id="corp-title" data-testid="corp-title" maxlength="120" autocomplete="off">
+            <label class="field-label" for="corp-body">本文</label>
+            <textarea id="corp-body" data-testid="corp-body" rows="8"></textarea>
+            <div class="btn-row">
+              <button type="button" class="btn corp-draft" id="corp-draft" data-testid="corp-draft"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span>AI で文面を整える</span></button>
+              <button type="submit" class="btn btn-send" id="corp-send" data-testid="corp-send">送信する</button>
+            </div>
+            <div id="corp-draft-status" class="corp-draft-status" data-testid="corp-draft-status" aria-live="polite"></div>
+          </form>
+        </section>
+        <section class="col corp-box" aria-labelledby="h-inbox">
+          <h2 id="h-inbox"><span class="step">2</span>受信</h2>
+          <div id="corp-inbox" class="corp-list" data-testid="corp-inbox"></div>
+        </section>
+        <section class="col corp-box" aria-labelledby="h-outbox">
+          <h2 id="h-outbox"><span class="step">3</span>送信履歴</h2>
+          <div id="corp-outbox" class="corp-list" data-testid="corp-outbox"></div>
+        </section>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -145,7 +183,8 @@
   <a href="#/home" data-route="home" data-testid="tab-home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>ホーム</span></a>
   <a href="#/new" data-route="new" data-testid="tab-new"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>新規</span></a>
   <a href="#/deliveries" data-route="deliveries" data-testid="tab-deliveries"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg><span>配信</span></a>
-  <a href="/board.html" target="_blank" rel="noopener" data-testid="link-board"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span>ボード</span></a>
+  <a href="#/corp" data-route="corp" data-testid="tab-corp"><svg class="ic" aria-hidden="true"><use href="#i-corp"/></svg><span>法人内</span><b class="nav-badge" data-testid="corp-tab-badge" hidden></b></a>
+  <a href="/board.html" id="link-board" target="_blank" rel="noopener" data-testid="link-board"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span>ボード</span></a>
 </nav>
 
 <div id="toasts" class="toasts" aria-live="polite"></div>
