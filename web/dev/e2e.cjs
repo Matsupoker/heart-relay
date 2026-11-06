@@ -336,8 +336,10 @@ const T = (id) => `[data-testid=${id}]`;
   await m.selectOption(T('corp-to'), 'C'); await m.fill(T('corp-title'), 'スマホからの連絡'); await m.fill(T('corp-body'), '本文テストです。');
   sm = await small('.corp-form button,.corp-form select,.corp-form input,.corp-form textarea,.facility select,.corp-ack');
   check('(f) 法人内フォーム: 44px以上・16px以上', sm.length === 0, JSON.stringify(sm));
-  await m.click(T('corp-send')); await m.waitForSelector(T('corp-outbox-item'));
-  check('(f) スマホで送信でき履歴に出る', (await m.textContent(T('corp-outbox'))).includes('ひだまり病院') || (await m.textContent(T('corp-outbox'))).includes('スマホからの連絡'));
+  await m.click(T('corp-send'));
+  // 送信履歴には直前の PC シナリオ(A→B)の項目が既にあるため、項目の存在ではなく今回の件名が現れるまで待つ
+  await m.waitForFunction((id) => (document.querySelector(`[data-testid=${id}]`) || {}).textContent?.includes('スマホからの連絡'), 'corp-outbox', { timeout: 5000 }).catch(() => {});
+  check('(f) スマホで送信でき履歴に出る', (await m.textContent(T('corp-outbox'))).includes('スマホからの連絡'), (await m.textContent(T('corp-outbox'))).replace(/\s+/g, ' ').slice(0, 80));
   sm = await small('.corp-box .corp-meta,.corp-box .corp-body,.corp-box .corp-badge');
   check('(f) 履歴: 16px以上', sm.every(x => x.f >= 16), JSON.stringify(sm.filter(x => x.f < 16)));
   check('(f) 横スクロールなし(履歴)', (await overflow()) <= 0, 'overflow=' + await overflow());
