@@ -161,8 +161,55 @@ interface BoardPost {
 `{ error: string, code?: string }`。400/403/404/413/415/429/500。
 
 ### 解析呼び出しの保護
-- Claude を呼ぶのは `POST /api/messages`、`/resident`、`/reanalyze`、`/api/intake`（画像/PDF）のみ。
+- Claude を呼ぶのは `POST /api/messages`、`/resident`、`/reanalyze`、`/api/intake`（画像/PDF）、v3 の `POST /api/office-messages/draft` のみ。
 - 1分あたりの上限 `ANALYZE_RATE_LIMIT_PER_MIN`（既定 10）。超過時 429。
+
+## v3（Issue #2 法人内複数事業所）
+
+設計の正: `docs/plan/Issue2_法人内連絡_設計_2026-11-07.md` §2。架空 3 事業所（A デイサービス ひだまり／B 老健 やすらぎ／C ひだまり病院）。
+既存エンドポイントは `office` 省略時 **A** として後方互換（Android は無変更）。事業所切替は架空データによる実証で、認証・認可は実装しない。
+
+```ts
+interface Office { id: string; name: string; kind: string }   // kind: "デイサービス" | "老健" | "病院"
+interface OfficeMessage {
+  id: string; from_office: Office; to_office: Office; source_message_id: string | null;
+  title: string; body: string; created_by: string; created_at: string;
+  acknowledged_at: string | null; acknowledged_by: string | null;
+}
+// 追加フィールド（v3）: Staff.office_id: string / Message.office_id: string
+// BoardPost の形は v2 のまま（office_id は返さない。?office= で絞って取得する）
+```
+
+| Method | Path | 内容 |
+|---|---|---|
+| GET | `/api/offices` | `Office[]`（id 順） |
+| GET | `/api/staff?office=A` | その事業所の職員（在籍・休止とも）。省略時 A |
+| GET | `/api/messages?office=A` | その事業所の連絡事項。省略時 A |
+| POST | `/api/messages` | body に `office_id`（省略時 A）。**解析に渡す職員名簿と `/send` の宛先検証は、その事業所の在籍（active）職員のみ** |
+| GET | `/api/board?office=A` | その事業所の掲示（`?all=1` も同じく絞る）。省略時 A |
+| GET | `/api/stats?office=A` | その事業所の件数（deliveries はその事業所の連絡事項に属するもの）。省略時 A |
+| GET | `/api/office-messages?office=A` | `{inbox, outbox}`（inbox: to=office、outbox: from=office、どちらも新しい順）。省略時 A |
+| POST | `/api/office-messages` | `{from_office_id, to_office_id, title, body, created_by?, source_message_id?}` → `OfficeMessage`。**人間の明示操作でのみ呼ぶ** |
+| POST | `/api/office-messages/:id/ack` | `{staff_name, office_id?}` → `OfficeMessage`（冪等） |
+| POST | `/api/office-messages/draft` | `{from_office_id, to_office_id, source_message_id?, notes?}` → `{title, body, model, usage}`（案のみ。**送信しない**） |
+| GET | `/api/staff/:id/deliveries`・POST `/api/deliveries/:id/ack` | **無変更**（Android 互換。職員 ID で引くので事業所指定は不要） |
+
+### v3 の実装で決めた点
+- 未知の事業所 ID（`?office=`・`office_id`・`from_office_id`・`to_office_id`）は 400 `unknown_office`。空文字の `?office=` は省略扱い（A）。
+- 照合（利用者台帳）は事業所共通。台帳は A のみだが、他事業所の連絡でも照合は行う（架空データの実証のため）。照合から除外する職員名は全事業所の職員。
+- `/send` で作る掲示は、その連絡事項の事業所の `office_id` で保存する。
+- `POST /api/office-messages`:
+  - `from_office_id`・`to_office_id` 必須。from=to は 400 `same_office`。
+  - `title`（200字以内）・`body`（5000字以内）必須（前後空白は除去）。`created_by` は任意（既定 `""`、100字まで）。
+  - `source_message_id` は存在確認（無ければ 400 `unknown_message`）し、**送信元事業所の連絡事項であること**（違えば 400 `office_mismatch`）。
+- `ack`: `staff_name` 必須（空は 400）。2回目以降は最初の `acknowledged_at`・`acknowledged_by` を保つ。`office_id` を付けた場合は受信事業所（to）と一致しなければ 403。存在しない id は 404。
+- `/draft`:
+  - from/to の検証は送信と同じ。`source_message_id` と `notes`（2000字以内）の**どちらかが必要**（両方無ければ 400）。元連絡は送信元事業所のもので、解析済み（analysis あり）であること（未解析は 400 `not_analyzed`）。
+  - Claude に渡す材料は、送信元/先の事業所名・種別、元連絡の `summary`・`required_actions`・`categories`・利用者氏名、`notes` のみ。宛先職員名・宛先理由・除外理由・台帳の詳細（送迎コース・担当職員・ケアマネ等）・原文は渡さない。
+  - ツール `submit_office_draft`（`tool_choice: auto`、無ければ本文の JSON）。モデルは `OFFICE_DRAFT_MODEL` → `HEART_RELAY_MODEL` → `claude-sonnet-5-5`。Claude の失敗は 502 `draft_failed`。
+  - API キー未設定時はテンプレートのモック文面（`model: "mock"`、`usage: null`）。回数制限は解析と共有し、モックでも 1 回と数える。
+- **作成経路の限定**: `office_messages` への INSERT は `backend/src/office/service.js` の `createOfficeMessage()` だけで、呼ぶのは `POST /api/office-messages` ハンドラだけ（`test/office.test.js` で grep と動作の両方を確認）。解析・`/send`・ボード・`/draft` からは作られない。
+- スキーマ v3: `offices`・`office_messages` を新設、`staff`・`messages`・`board_posts` に `office_id TEXT NOT NULL DEFAULT 'A'`。v1/v2 の DB は起動時に自動移行し、既存行は A。B・C の架空職員（`b01..b03`, `c01..c03`）は起動時に upsert。
 
 ## Android の最小フロー（v1 のまま）
 1. 起動時 `GET /api/staff` → 職員選択
