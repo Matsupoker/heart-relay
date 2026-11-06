@@ -129,6 +129,7 @@ export function createRouter({ db, analyzer, env }) {
   // v2 サブルータ（別作業系統が実装。ファイルを分けて並行開発の競合を避ける）
   const dataDir = path.dirname(path.resolve(env.DB_PATH || './data/heart-relay.db'));
   router.use('/board', createBoardRouter({ db, env }));
+  router.use(createOfficeRouter({ db, env }));
   router.use(createIntakeRouter({ db, env, analyzer, checkRate, dataDir }));
 
   router.get('/health', (req, res) => {

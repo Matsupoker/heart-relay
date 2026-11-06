@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { BOARD_SCHEMA } from './board/schema.js';
 import { INTAKE_SCHEMA } from './intake/schema.js';
+import { OFFICE_SCHEMA } from './office/schema.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS staff (
@@ -94,6 +95,7 @@ export function openDb(dbPath) {
   db.exec(SCHEMA);
   db.exec(BOARD_SCHEMA);
   db.exec(INTAKE_SCHEMA);
+  db.exec(OFFICE_SCHEMA);
   migrate(db);
   return db;
 }
