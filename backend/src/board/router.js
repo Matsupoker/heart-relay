@@ -2,6 +2,7 @@
 import express from 'express';
 import { HttpError, nowIso, wrap } from '../http.js';
 import { toBoardPost } from './service.js';
+import { resolveOfficeId } from '../office/service.js';
 
 const URGENCY_RANK = { high: 0, medium: 1, low: 2 };
 const byCreatedDesc = (a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0);
@@ -16,13 +17,15 @@ const notExpired = (p, now) => {
 export function createBoardRouter({ db }) {
   const router = express.Router();
 
+  // v3: ?office= で事業所を絞る（省略時 A）。他事業所の掲示は出さない
   router.get('/', wrap((req, res) => {
+    const office = resolveOfficeId(db, req.query.office);
     if (req.query.all === '1') {
-      const rows = db.prepare('SELECT * FROM board_posts ORDER BY created_at DESC LIMIT 100').all();
+      const rows = db.prepare('SELECT * FROM board_posts WHERE office_id = ? ORDER BY created_at DESC LIMIT 100').all(office);
       return res.json(rows.map(toBoardPost));
     }
     const now = Date.now();
-    const posts = db.prepare('SELECT * FROM board_posts WHERE archived_at IS NULL').all()
+    const posts = db.prepare('SELECT * FROM board_posts WHERE archived_at IS NULL AND office_id = ?').all(office)
       .map(toBoardPost)
       .filter((p) => notExpired(p, now))
       .sort((a, b) => (URGENCY_RANK[a.urgency] ?? 1) - (URGENCY_RANK[b.urgency] ?? 1) || byCreatedDesc(a, b));

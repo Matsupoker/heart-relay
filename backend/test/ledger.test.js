@@ -165,7 +165,7 @@ test('デモ文は想定どおりに照合される', () => {
   for (const d of DEMO_SAMPLES) assert.equal(match(d.raw_text).status, d.expect, d.label);
 });
 
-test('マイグレーション: v1 の DB（residents 8名・messages あり）を壊さず v2 へ', () => {
+test('マイグレーション: v1 の DB（residents 8名・messages あり）を壊さず v3 へ', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'heart-relay-mig-'));
   const dbPath = path.join(tmp, 'v1.db');
   try {
@@ -187,8 +187,9 @@ test('マイグレーション: v1 の DB（residents 8名・messages あり）�
     const db = openDb(dbPath);
     seedIfEmpty(db);
     assert.equal(db.prepare('SELECT COUNT(*) AS n FROM residents').get().n, 200);
-    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schema_version'").get().value, '2');
+    assert.equal(db.prepare("SELECT value FROM meta WHERE key='schema_version'").get().value, '3');
     const m = db.prepare("SELECT * FROM messages WHERE id='m1'").get();
+    assert.equal(m.office_id, 'A');
     assert.equal(m.raw_text, '旧連絡');
     assert.equal(m.resident_id, null);
     assert.ok('match_json' in m);
@@ -198,7 +199,8 @@ test('マイグレーション: v1 の DB（residents 8名・messages あり）�
     assert.match(s07.duties_json, /コース1・2/);
     assert.equal(s07.active, 0, 'active は upsert で上書きしない');
     assert.equal(db.prepare("SELECT ledger_staff_id FROM staff WHERE id='s04'").get().ledger_staff_id, 'S0001');
-    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM staff').get().n, 20);
+    assert.equal(db.prepare("SELECT COUNT(*) AS n FROM staff WHERE office_id='A'").get().n, 20);
+    assert.equal(db.prepare('SELECT COUNT(*) AS n FROM staff').get().n, 26, 'B・C の架空職員 各3名を追加');
     db.close();
 
     // 2回目の起動では residents を作り直さない（冪等）

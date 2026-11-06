@@ -6,6 +6,7 @@ import { HttpError, newId as id, nowIso as now, parseJson as j } from './http.js
 import { createBoardRouter } from './board/router.js';
 import { createIntakeRouter, attachToMessage, listAttachments } from './intake/router.js';
 import { createOfficeRouter } from './office/router.js';
+import { resolveOfficeId } from './office/service.js';
 import { insertBoardPost, getBoardPostByMessage } from './board/service.js';
 import { getResident, listResidents } from './ledger/resident.js';
 import { matchResidents, normalizeText, toKatakana } from './ledger/match.js';
@@ -13,7 +14,7 @@ import { readLedger } from './ledger/load.js';
 
 // ---------- DB 行 → API 型 ----------
 const toStaff = (r) => ({
-  id: r.id, name: r.name, role: r.role, duties: j(r.duties_json, []), active: !!r.active,
+  id: r.id, office_id: r.office_id, name: r.name, role: r.role, duties: j(r.duties_json, []), active: !!r.active,
   ledger_staff_id: r.ledger_staff_id ?? null, transport_routes: j(r.transport_routes_json, []),
 });
 
@@ -31,7 +32,7 @@ const DELIVERY_SELECT = `SELECT d.*, s.name AS staff_name, s.role AS staff_role
 function toMessage(db, r) {
   const deliveries = db.prepare(`${DELIVERY_SELECT} WHERE d.message_id = ? ORDER BY d.created_at, s.id`).all(r.id).map(toDelivery);
   return {
-    id: r.id, raw_text: r.raw_text, source: r.source, created_by: r.created_by, created_at: r.created_at,
+    id: r.id, office_id: r.office_id, raw_text: r.raw_text, source: r.source, created_by: r.created_by, created_at: r.created_at,
     status: r.status, analyzer: r.analyzer, model: r.model, error: r.error,
     usage: j(r.usage_json),
     resident_id: r.resident_id ?? null,
@@ -74,14 +75,16 @@ export function createRouter({ db, analyzer, env }) {
   const allowAnalyze = createRateLimiter(Number(env.ANALYZE_RATE_LIMIT_PER_MIN) || 10);
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res)).catch(next);
 
-  /** 解析に渡す職員名簿（担当利用者数＝利用中の担当人数を付ける） */
-  const rosterForAnalysis = () => {
+  /** その事業所の在籍職員（解析・配信の名簿。他事業所の職員は宛先候補にしない） */
+  const officeStaffRows = (officeId) => db.prepare('SELECT * FROM staff WHERE office_id = ? AND active = 1 ORDER BY id').all(officeId);
+  /** 解析に渡す職員名簿（その事業所の在籍職員のみ。担当利用者数＝利用中の担当人数を付ける） */
+  const rosterForAnalysis = (officeId) => {
     const counts = new Map(db.prepare(`SELECT staff_id, COUNT(*) AS n FROM residents
       WHERE staff_id IS NOT NULL AND service_status = '利用中' GROUP BY staff_id`).all().map((x) => [x.staff_id, x.n]));
-    return db.prepare('SELECT * FROM staff ORDER BY id').all().map(toStaff)
+    return officeStaffRows(officeId).map(toStaff)
       .map((st) => ({ ...st, assigned_residents: counts.get(st.id) ?? 0 }));
   };
-  // 照合時に「利用者ではない人」として除外する氏名（職員・ケアマネ）
+  // 照合時に「利用者ではない人」として除外する氏名（全事業所の職員・ケアマネ。照合は事業所共通）
   const nonResidentNames = () => [
     ...db.prepare('SELECT name FROM staff').all().map((x) => x.name),
     ...readLedger().careManagerNames,
@@ -109,7 +112,7 @@ export function createRouter({ db, analyzer, env }) {
   async function runAnalysis(row) {
     const started = Date.now();
     try {
-      const staff = rosterForAnalysis();
+      const staff = rosterForAnalysis(row.office_id);
       const resident = getResident(db, row.resident_id);
       const out = await analyzer.analyze({ rawText: row.raw_text, source: row.source, staff, resident });
       log.analyzer({ analyzer: analyzer.name, model: out.model, usage: out.usage, ms: Date.now() - started });
@@ -130,7 +133,7 @@ export function createRouter({ db, analyzer, env }) {
   // v2 サブルータ（別作業系統が実装。ファイルを分けて並行開発の競合を避ける）
   const dataDir = path.dirname(path.resolve(env.DB_PATH || './data/heart-relay.db'));
   router.use('/board', createBoardRouter({ db, env }));
-  router.use(createOfficeRouter({ db, env }));
+  router.use(createOfficeRouter({ db, env, checkRate }));
   router.use(createIntakeRouter({ db, env, analyzer, checkRate, dataDir }));
 
   router.get('/health', (req, res) => {
@@ -138,8 +141,10 @@ export function createRouter({ db, analyzer, env }) {
     res.json({ ok: true, analyzer: analyzer.name, model: analyzer.model || 'mock', time: now(), residents });
   });
 
+  // v3: ?office= で事業所を絞る（省略時 A。Android は無変更で A の職員一覧を得る）
   router.get('/staff', (req, res) => {
-    res.json(db.prepare('SELECT * FROM staff ORDER BY id').all().map(toStaff));
+    const office = resolveOfficeId(db, req.query.office);
+    res.json(db.prepare('SELECT * FROM staff WHERE office_id = ? ORDER BY id').all(office).map(toStaff));
   });
 
   // 台帳検索（氏名・カナ・ID の部分一致。空白・全角半角・ひらがな/カタカナの違いは無視）
@@ -178,7 +183,8 @@ export function createRouter({ db, analyzer, env }) {
   });
 
   router.get('/messages', (req, res) => {
-    const rows = db.prepare('SELECT * FROM messages ORDER BY created_at DESC, rowid DESC').all();
+    const office = resolveOfficeId(db, req.query.office);
+    const rows = db.prepare('SELECT * FROM messages WHERE office_id = ? ORDER BY created_at DESC, rowid DESC').all(office);
     res.json(rows.map((r) => toMessage(db, r)));
   });
 
@@ -189,6 +195,7 @@ export function createRouter({ db, analyzer, env }) {
     if (attachment_ids !== undefined && (!Array.isArray(attachment_ids) || attachment_ids.some((x) => typeof x !== 'string'))) {
       throw new HttpError(400, 'attachment_ids は文字列の配列にしてください', 'bad_request');
     }
+    const officeId = resolveOfficeId(db, req.body?.office_id, 'office_id');
     const text = raw_text.trim();
     // 対象利用者: 明示されていれば照合しない。未指定なら決定的照合
     let residentId = parseResidentId(req.body?.resident_id);
@@ -202,8 +209,8 @@ export function createRouter({ db, analyzer, env }) {
     const mid = id();
     db.exec('BEGIN');
     try {
-      db.prepare(`INSERT INTO messages (id,raw_text,source,created_by,created_at,status,resident_id,match_json) VALUES (?,?,?,?,?,?,?,?)`)
-        .run(mid, text, typeof source === 'string' && source ? source : '手入力',
+      db.prepare(`INSERT INTO messages (id,office_id,raw_text,source,created_by,created_at,status,resident_id,match_json) VALUES (?,?,?,?,?,?,?,?,?)`)
+        .run(mid, officeId, text, typeof source === 'string' && source ? source : '手入力',
           typeof created_by === 'string' && created_by ? created_by : 'pc', now(),
           needsResident ? 'needs_resident' : 'analyzing', residentId, match ? JSON.stringify(match) : null);
       if (attachment_ids?.length) attachToMessage(db, mid, attachment_ids);
@@ -249,7 +256,8 @@ export function createRouter({ db, analyzer, env }) {
     if (!Array.isArray(recipients)) throw new HttpError(400, 'recipients は配列にしてください', 'bad_request');
     const boardPost = validateBoardPost(req.body?.board_post);
     if (recipients.length === 0 && !boardPost) throw new HttpError(400, 'recipients か board_post のどちらかが必要です', 'bad_request');
-    const known = new Set(db.prepare('SELECT id FROM staff').all().map((s) => s.id));
+    // 宛先はその連絡事項の事業所の在籍職員のみ（解析に渡した名簿と同じ）
+    const known = new Set(officeStaffRows(row.office_id).map((s) => s.id));
     const seen = new Set();
     for (const r of recipients) {
       if (!r || !known.has(r.staff_id)) throw new HttpError(400, `存在しない職員IDです: ${r?.staff_id}`, 'unknown_staff');
@@ -272,10 +280,12 @@ export function createRouter({ db, analyzer, env }) {
           urgency, JSON.stringify(categories), t);
       }
       if (boardPost) {
-        insertBoardPost(db, {
+        const bp = insertBoardPost(db, {
           message_id: row.id, ...boardPost, urgency, categories,
           resident_name: getResident(db, row.resident_id)?.name ?? null,
         });
+        // 掲示はその連絡事項の事業所のボードに載せる（board/service.js は既定 A で作るため同一トランザクション内で付け替え）
+        db.prepare('UPDATE board_posts SET office_id=? WHERE id=?').run(row.office_id, bp.id);
       }
       db.prepare(`UPDATE messages SET status='sent' WHERE id=?`).run(row.id);
       db.exec('COMMIT');
@@ -309,13 +319,16 @@ export function createRouter({ db, analyzer, env }) {
     res.json(toDelivery(db.prepare(`${DELIVERY_SELECT} WHERE d.id=?`).get(d.id)));
   });
 
+  // v3: ?office= で事業所を絞る（省略時 A）。配信はその事業所の連絡事項に属するもの
   router.get('/stats', (req, res) => {
-    const n = (sql) => db.prepare(sql).get().n;
-    const deliveries = n('SELECT COUNT(*) AS n FROM deliveries');
-    const acked = n('SELECT COUNT(*) AS n FROM deliveries WHERE acknowledged_at IS NOT NULL');
+    const office = resolveOfficeId(db, req.query.office);
+    const n = (sql) => db.prepare(sql).get(office).n;
+    const DQ = 'SELECT COUNT(*) AS n FROM deliveries d JOIN messages m ON m.id = d.message_id WHERE m.office_id = ?';
+    const deliveries = n(DQ);
+    const acked = n(`${DQ} AND d.acknowledged_at IS NOT NULL`);
     res.json({
-      messages: n('SELECT COUNT(*) AS n FROM messages'), deliveries, acked, unacked: deliveries - acked,
-      board_posts: n('SELECT COUNT(*) AS n FROM board_posts WHERE archived_at IS NULL'),
+      messages: n('SELECT COUNT(*) AS n FROM messages WHERE office_id = ?'), deliveries, acked, unacked: deliveries - acked,
+      board_posts: n('SELECT COUNT(*) AS n FROM board_posts WHERE archived_at IS NULL AND office_id = ?'),
     });
   });
 

@@ -26,12 +26,34 @@ const BASE_STAFF = [
   { id: 's20', name: '大野 健', role: '介護職員', duties: ['レクリエーション'] },
 ];
 
-// 起動時に staff テーブルへ upsert して属性を同期する（id は不変）
+// 起動時に staff テーブルへ upsert して属性を同期する（id は不変）。STAFF は事業所 A（デイサービス）の20名
 export const STAFF = BASE_STAFF.map((s) => ({
   ...s,
+  office_id: 'A',
   ledger_staff_id: ledgerIdOf(s.id),
   transport_routes: s.transport_routes || [],
 }));
+
+// v3（Issue #2）: 同一法人の架空 3 事業所。A が既存の単一事業所
+export const OFFICES = [
+  { id: 'A', name: 'デイサービス ひだまり', kind: 'デイサービス' },
+  { id: 'B', name: '老健 やすらぎ', kind: '老健' },
+  { id: 'C', name: 'ひだまり病院', kind: '病院' },
+];
+
+// 事業所 B・C の架空職員（各3名）。台帳（A の利用者）とは紐付かない
+const OTHER_BASE = [
+  { id: 'b01', office_id: 'B', name: '杉山 真理', role: '支援相談員', duties: ['入退所相談', '家族連絡'] },
+  { id: 'b02', office_id: 'B', name: '原田 由香', role: '看護師', duties: ['健康管理', '服薬管理'] },
+  { id: 'b03', office_id: 'B', name: '今井 拓真', role: '介護職員', duties: ['フロア'] },
+  { id: 'c01', office_id: 'C', name: '菅原 亮介', role: '地域連携室', duties: ['入退院調整', '他事業所連携'] },
+  { id: 'c02', office_id: 'C', name: '岩崎 恵美', role: '看護師', duties: ['病棟看護'] },
+  { id: 'c03', office_id: 'C', name: '秋山 一郎', role: '医事', duties: ['受付', '外来予約'] },
+];
+export const OTHER_OFFICE_STAFF = OTHER_BASE.map((s) => ({ ...s, ledger_staff_id: null, transport_routes: [] }));
+
+/** 全事業所の職員（syncStaff が upsert する） */
+export const ALL_STAFF = [...STAFF, ...OTHER_OFFICE_STAFF];
 
 // Web UI のクイック挿入ボタン用サンプル連絡事項（利用者名は fixtures/ の200名台帳に実在する架空の氏名）
 // label は画面のボタン表示用。expect は照合の想定（テスト・確認用）

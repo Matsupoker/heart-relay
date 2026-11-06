@@ -48,12 +48,15 @@ CREATE TABLE IF NOT EXISTS residents (
 );
 `;
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 // 既存テーブルへ後から足す列（PRAGMA table_info で存在確認してから ALTER）
+// v3（Issue #2）: office_id は事業所単位の列。既存行は事業所 A（従来の単一事業所）になる
+const OFFICE_COLUMN = ['office_id', "TEXT NOT NULL DEFAULT 'A'"];
 const ADDED_COLUMNS = {
-  messages: [['resident_id', 'TEXT'], ['match_json', 'TEXT']],
-  staff: [['ledger_staff_id', 'TEXT'], ['transport_routes_json', "TEXT NOT NULL DEFAULT '[]'"]],
+  messages: [['resident_id', 'TEXT'], ['match_json', 'TEXT'], OFFICE_COLUMN],
+  staff: [['ledger_staff_id', 'TEXT'], ['transport_routes_json', "TEXT NOT NULL DEFAULT '[]'"], OFFICE_COLUMN],
+  board_posts: [OFFICE_COLUMN],
 };
 
 function getMeta(db, key) {
@@ -64,8 +67,9 @@ export function setMeta(db, key, value) {
 }
 
 /**
- * v1 → v2 の移行。messages / deliveries / ack_events / staff の既存行は保持する。
- * residents は v1 の8名簡易シードなので DROP して v2 の列で作り直す（台帳の投入は seed 側）。
+ * v1 → v2 → v3 の移行。messages / deliveries / ack_events / staff / board_posts の既存行は保持する。
+ * v2: residents は v1 の8名簡易シードなので DROP して v2 の列で作り直す（台帳の投入は seed 側）。
+ * v3: staff / messages / board_posts に office_id（既定 'A'）を足す。offices の投入は seed 側。
  */
 function migrate(db) {
   const version = Number(getMeta(db, 'schema_version') || 1);
@@ -75,11 +79,12 @@ function migrate(db) {
       const have = new Set(db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name));
       for (const [name, type] of cols) if (!have.has(name)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${type}`);
     }
-    if (version < 2) {
-      db.exec('DROP TABLE IF EXISTS residents');
-      setMeta(db, 'schema_version', SCHEMA_VERSION);
-    }
+    if (version < 2) db.exec('DROP TABLE IF EXISTS residents');
+    if (version < SCHEMA_VERSION) setMeta(db, 'schema_version', SCHEMA_VERSION);
     db.exec(RESIDENTS_V2);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_messages_office ON messages(office_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_board_posts_office ON board_posts(office_id, archived_at);
+      CREATE INDEX IF NOT EXISTS idx_staff_office ON staff(office_id);`);
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
