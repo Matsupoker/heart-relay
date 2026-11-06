@@ -5,6 +5,7 @@ import { DEMO_SAMPLES } from './seedData.js';
 import { HttpError, newId as id, nowIso as now, parseJson as j } from './http.js';
 import { createBoardRouter } from './board/router.js';
 import { createIntakeRouter, attachToMessage, listAttachments } from './intake/router.js';
+import { createOfficeRouter } from './office/router.js';
 import { insertBoardPost, getBoardPostByMessage } from './board/service.js';
 import { getResident, listResidents } from './ledger/resident.js';
 import { matchResidents, normalizeText, toKatakana } from './ledger/match.js';
