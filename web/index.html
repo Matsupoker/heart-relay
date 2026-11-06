@@ -6,75 +6,148 @@
 <title>HEART RELAY（仮）</title>
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-<header class="app-header">
-  <div class="brand">
-    <h1>HEART RELAY<span class="tmp">（仮）</span></h1>
-    <p class="subtitle">必要な情報を、必要な人に、必要な形で。</p>
-  </div>
-  <div class="header-right">
-    <a class="board-link" href="/board.html" target="_blank" rel="noopener" data-testid="link-board">共有ボードを開く</a>
-    <span id="analyzer-badge" class="badge badge-neutral" data-testid="analyzer-badge">確認中…</span>
-    <span id="conn" class="conn conn-off" data-testid="conn-indicator"><i></i><span>接続確認中</span></span>
-  </div>
+<body data-route="home">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 10.5 13.5"/><path d="M21 3l-6.5 18-4-7.5L3 9.5 21 3z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2.2"/><path d="M9 4.5v-1h6v1"/><path d="M8.5 11h7M8.5 15h5"/></symbol>
+    <symbol id="i-board" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="2.3"/><circle cx="6" cy="18" r="2.3"/><circle cx="18" cy="18" r="2.3"/><path d="M12 7.8v4.2M12 12l-5 4M12 12l5 4"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/><path d="M12 20h8"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-4.5 3.5 3L16 13l4 4"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6.5 3.5h8l4 4v13h-12z"/><path d="M14.5 3.5v4h4"/><path d="M9.5 12h6M9.5 15.5h6"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M10 4l1.7 4.8L16.5 10.5l-4.8 1.7L10 17l-1.7-4.8L3.5 10.5l4.8-1.7z"/><path d="M18 3.5v4M16 5.5h4M18 15v4M16 17h4"/></symbol>
+    <symbol id="i-person-check" viewBox="0 0 24 24"><circle cx="10" cy="8" r="3.3"/><path d="M4 20c0-3.6 2.7-6 6-6 1.2 0 2.2.3 3.1.8"/><path d="M14.5 17.5l2.3 2.3 4-4.5"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="currentColor" stroke="none"/><path d="M7.8 12.4l3 3 5.6-6.2" stroke="#fff" stroke-width="2.2"/></symbol>
+    <symbol id="i-check-o" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l3 3 5.2-6"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/><circle cx="12" cy="16.4" r=".6" fill="currentColor"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="2.2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 5.5 3 3.5H7l3-3.5z"/><path d="M12 13v7"/></symbol>
+  </defs>
+</svg>
+
+<header class="topbar" data-testid="topbar">
+  <a class="brand" href="#/home" aria-label="HEART RELAY ホームへ">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.4C5.2 15.6 3 12 3 9c0-2.6 2-4.6 4.5-4.6 1.8 0 3.3.9 4.5 2.6 1.2-1.7 2.7-2.6 4.5-2.6C19 4.4 21 6.4 21 9c0 3-2.2 6.6-9 11.4z"/><path d="M7.2 11.2h3l1.4-2.4 2 4.2 1.4-1.8h2"/></svg>
+    <span class="brand-name">HEART RELAY</span>
+  </a>
+  <span class="facility" data-testid="facility"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg>デイサービス（架空）</span>
+  <span class="today" id="today-label" data-testid="today-label"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg><span></span></span>
+  <label class="operator"><span>入力者</span>
+    <select id="created-by" data-testid="created-by"><option value="相談員 デモ">相談員 デモ</option></select>
+  </label>
+  <a class="btn-new" href="#/new" data-testid="btn-new"><span aria-hidden="true">＋</span> 新規連絡</a>
 </header>
 
-<nav class="tabs" role="tablist" aria-label="画面切替" data-testid="tabs">
-  <button type="button" role="tab" class="tab" data-tab="input" data-testid="tab-input">1 入力</button>
-  <button type="button" role="tab" class="tab" data-tab="proposal" data-testid="tab-proposal">2 提案</button>
-  <button type="button" role="tab" class="tab" data-tab="status" data-testid="tab-status">3 状況</button>
+<div class="shell">
+  <nav class="sidenav" aria-label="メインメニュー" data-testid="sidenav">
+    <a href="#/home" data-route="home" data-testid="nav-home" title="ホーム"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>ホーム</span></a>
+    <a href="#/new" data-route="new" data-testid="nav-new" title="新規連絡"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>新規連絡</span></a>
+    <a href="#/deliveries" data-route="deliveries" data-testid="nav-deliveries" title="配信管理"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg><span>配信管理</span></a>
+    <a href="/board.html" target="_blank" rel="noopener" data-testid="nav-board" title="共有ボード（新しいタブ）"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span>共有ボード</span></a>
+  </nav>
+
+  <main class="main">
+    <!-- ================= ホーム ================= -->
+    <section class="view view-home" id="view-home" data-view="home" data-testid="view-home" aria-labelledby="h-hero">
+      <div class="hero">
+        <h1 id="h-hero"><i aria-hidden="true"></i>連絡事項を送信する</h1>
+        <p class="hero-sub">連絡内容を入力するか、FAX・写真を取り込んで始めます</p>
+        <a class="hero-cta" href="#/new" data-testid="home-cta"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg>新しい連絡を作成<span aria-hidden="true">→</span></a>
+        <div class="hero-alt">
+          <a href="#/new" id="home-text" data-testid="home-text"><svg class="ic" aria-hidden="true"><use href="#i-pencil"/></svg>文章を入力</a>
+          <a href="#/new" id="home-file" data-testid="home-file"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>ファイル・写真を取り込む</a>
+        </div>
+        <ol class="steps3" data-testid="home-steps">
+          <li><span class="s-ic"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg></span><span class="s-tx"><b>1</b>連絡を入力</span></li>
+          <li class="arrow" aria-hidden="true">→</li>
+          <li><span class="s-ic"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg></span><span class="s-tx"><b>2</b>AIが通知先を提案</span></li>
+          <li class="arrow" aria-hidden="true">→</li>
+          <li><span class="s-ic"><svg class="ic" aria-hidden="true"><use href="#i-person-check"/></svg></span><span class="s-tx s-tx3"><span class="s-line"><b>3</b>職員が確認して配信</span><em>必ず職員の確認・承認が必要です</em></span></li>
+        </ol>
+      </div>
+
+      <div class="today-card">
+        <div class="today-head">
+          <h2>今日の連絡</h2><span class="today-lead">本日の配信状況と、確認が必要な連絡です。</span>
+          <a class="more" href="#/deliveries" data-testid="home-more">配信状況を見る<svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></a>
+        </div>
+        <div class="home-stats" id="home-stats" data-testid="stats"></div>
+        <div id="home-rows" class="home-rows" data-testid="sent-today"></div>
+      </div>
+    </section>
+
+    <!-- ================= 新規連絡 ================= -->
+    <section class="view view-new" id="view-new" data-view="new" data-testid="view-new" hidden>
+      <div class="new-grid">
+        <section class="col col-input" data-pane="input" aria-labelledby="h-input">
+          <h2 id="h-input"><span class="step">1</span>新規連絡事項</h2>
+          <form id="msg-form" data-testid="msg-form">
+            <label class="field-label" for="raw-text">連絡内容</label>
+            <textarea id="raw-text" data-testid="raw-text" rows="7" placeholder="例：A様は受診のため15時までに帰宅が必要"></textarea>
+            <div class="quick" id="quick" data-testid="quick-samples"></div>
+            <label class="field-label" for="source">情報源</label>
+            <select id="source" data-testid="source">
+              <option>手入力</option><option>電話</option><option>FAX</option><option>紙メモ</option><option>ケアマネ連絡</option><option>家族連絡</option><option>書類（ファイル）</option>
+            </select>
+            <div class="intake" data-testid="intake">
+              <span class="field-label">ファイル・写真から取り込む</span>
+              <div class="intake-btns">
+                <label class="btn file-btn">ファイルから取り込む
+                  <input type="file" class="sr-only" id="file-input" data-testid="file-input" accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.docx,.xls,.xlsx">
+                </label>
+                <label class="btn file-btn camera-btn">カメラで撮影
+                  <input type="file" class="sr-only" id="camera-input" data-testid="camera-input" accept="image/*" capture="environment">
+                </label>
+              </div>
+              <div id="intake-status" data-testid="intake-status" aria-live="polite"></div>
+              <div id="extract-area"></div>
+              <div id="chips" class="att-chips" data-testid="attachment-chips"></div>
+            </div>
+            <button id="submit" type="submit" class="btn btn-primary btn-lg" data-testid="submit-analyze">AIで解析する</button>
+          </form>
+        </section>
+
+        <section class="col col-proposal" data-pane="proposal" aria-labelledby="h-prop">
+          <h2 id="h-prop"><span class="step">2</span>AI提案の確認</h2>
+          <div id="proposal" data-testid="proposal-panel"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ================= 配信管理 ================= -->
+    <section class="view view-deliveries" id="view-deliveries" data-view="deliveries" data-testid="view-deliveries" hidden>
+      <div class="dl-wrap" id="dl-wrap">
+        <aside class="dl-list-pane" aria-labelledby="h-dl">
+          <h2 id="h-dl">今日の連絡</h2>
+          <p class="dl-lead" id="dl-lead">本日受信した連絡の一覧です。</p>
+          <div class="seg" role="group" aria-label="表示範囲">
+            <button type="button" id="dl-today" data-testid="dl-filter-today" aria-pressed="true">今日</button>
+            <button type="button" id="dl-all" data-testid="dl-filter-all" aria-pressed="false">すべて</button>
+          </div>
+          <div id="dl-list" class="dl-list" data-testid="sent-list"></div>
+        </aside>
+        <article class="dl-detail-pane" id="dl-detail" data-testid="dl-detail"></article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<footer class="app-footer">
+  <span class="foot-status"><span id="analyzer-badge" class="badge badge-neutral" data-testid="analyzer-badge">確認中…</span>
+  <span id="conn" class="conn conn-off" data-testid="conn-indicator"><i></i><span>接続確認中</span></span></span>
+  <span>本プロトタイプのデータはすべて架空です。</span>
+</footer>
+
+<nav class="tabbar" aria-label="画面切替" data-testid="tabbar">
+  <a href="#/home" data-route="home" data-testid="tab-home"><svg class="ic" aria-hidden="true"><use href="#i-home"/></svg><span>ホーム</span></a>
+  <a href="#/new" data-route="new" data-testid="tab-new"><svg class="ic" aria-hidden="true"><use href="#i-send"/></svg><span>新規</span></a>
+  <a href="#/deliveries" data-route="deliveries" data-testid="tab-deliveries"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg><span>配信</span></a>
+  <a href="/board.html" target="_blank" rel="noopener" data-testid="link-board"><svg class="ic" aria-hidden="true"><use href="#i-board"/></svg><span>ボード</span></a>
 </nav>
 
-<main class="layout">
-  <section class="col col-input" data-pane="input" aria-labelledby="h-input">
-    <h2 id="h-input"><span class="step">1</span>新規連絡事項</h2>
-    <form id="msg-form" data-testid="msg-form">
-      <label class="field-label" for="raw-text">連絡内容</label>
-      <textarea id="raw-text" data-testid="raw-text" rows="7" placeholder="例：A様は受診のため15時までに帰宅が必要"></textarea>
-      <div class="quick" id="quick" data-testid="quick-samples"></div>
-      <div class="row2">
-        <div>
-          <label class="field-label" for="source">情報源</label>
-          <select id="source" data-testid="source">
-            <option>手入力</option><option>電話</option><option>FAX</option><option>紙メモ</option><option>ケアマネ連絡</option><option>家族連絡</option><option>書類（ファイル）</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label" for="created-by">入力者</label>
-          <select id="created-by" data-testid="created-by"><option value="相談員 デモ">相談員 デモ</option></select>
-        </div>
-      </div>
-      <div class="intake" data-testid="intake">
-        <span class="field-label">ファイル・写真から取り込む</span>
-        <div class="intake-btns">
-          <label class="btn file-btn">ファイルから取り込む
-            <input type="file" class="sr-only" id="file-input" data-testid="file-input" accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.txt,.docx,.xls,.xlsx">
-          </label>
-          <label class="btn file-btn camera-btn">カメラで撮影
-            <input type="file" class="sr-only" id="camera-input" data-testid="camera-input" accept="image/*" capture="environment">
-          </label>
-        </div>
-        <div id="intake-status" data-testid="intake-status" aria-live="polite"></div>
-        <div id="extract-area"></div>
-        <div id="chips" class="att-chips" data-testid="attachment-chips"></div>
-      </div>
-      <button id="submit" type="submit" class="btn btn-primary btn-lg" data-testid="submit-analyze">AIで解析する</button>
-    </form>
-  </section>
-
-  <section class="col col-proposal" data-pane="proposal" aria-labelledby="h-prop">
-    <h2 id="h-prop"><span class="step">2</span>AI提案の確認</h2>
-    <div id="proposal" data-testid="proposal-panel"></div>
-  </section>
-
-  <section class="col col-status" data-pane="status" aria-labelledby="h-status">
-    <h2 id="h-status"><span class="step">3</span>配信状況と確認状況</h2>
-    <div id="stats" class="stats" data-testid="stats"></div>
-    <div id="sent-list" data-testid="sent-list"></div>
-  </section>
-</main>
-
-<footer class="app-footer">本プロトタイプのデータはすべて架空です。</footer>
 <div id="toasts" class="toasts" aria-live="polite"></div>
 <script type="module" src="app.js"></script>
 </body>

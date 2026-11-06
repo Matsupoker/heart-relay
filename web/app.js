@@ -18,7 +18,6 @@ const state = {
   messages: [],
   ackedSeen: null,      // Set<delivery id>（初回はnull）
   busy: false,
-  sentNote: null,
   audience: 'individual',
   board: { title: '', body: '', until: '' },   // until は datetime-local 値（JST）
   attachments: [],      // 反映済みの添付 [{id, filename, kind, ...}]
@@ -26,7 +25,9 @@ const state = {
   intakeBusy: null,     // 取り込み中のファイル名
   changing: false,      // 提案表示中に利用者を変更するUIを開いているか
   pickResults: null,    // 検索結果 Resident[] | null
-  tab: 'input',
+  dlAll: false,         // 配信管理: 「すべて」表示か
+  exclOpen: false,      // 配信詳細: 除外職員の折りたたみ開閉
+  pending: null,        // ルート遷移後に行う操作 'focus'
 };
 const NARROW = window.matchMedia('(max-width: 900px)');
 const LS_KEY = 'hr.createdBy';
@@ -118,9 +119,9 @@ async function submitMessage(ev) {
   if (state.busy) return;
   if (state.extract && !confirm('「抽出内容の確認」がまだ反映されていません。反映せずに解析しますか？')) return;
   syncSource();
-  state.sentNote = null; state.changing = false; state.pickResults = null;
+  state.changing = false; state.pickResults = null;
   state.current = { loading: true };
-  setBusy(true); setTab('proposal'); renderProposal();
+  setBusy(true); renderProposal(); focusProposal();
   const body = { raw_text: raw, source: $('source').value, created_by: $('created-by').value || '相談員 デモ' };
   if (state.attachments.length) body.attachment_ids = state.attachments.map((a) => a.id);
   try {
@@ -129,7 +130,7 @@ async function submitMessage(ev) {
     setCurrent(m);
   } catch (e) {
     state.current = null; toast('解析に失敗しました: ' + e.message);
-    renderProposal(); setTab('input');
+    renderProposal();
   } finally { setBusy(false); }
 }
 function toLocalInput(iso) {
@@ -148,12 +149,10 @@ function setCurrent(m) {
     state.board = { title: bp ? bp.title : '', body: bp ? bp.body : '', until: bp ? toLocalInput(bp.until) : '' };
   } else state.recips = [];
   renderProposal();
-  if (m.status === 'proposed' || m.status === 'needs_resident' || m.status === 'failed') setTab('proposal');
+  if (m.status === 'proposed' || m.status === 'needs_resident' || m.status === 'failed') focusProposal();
 }
-function setTab(t) {
-  state.tab = t; document.body.dataset.tab = t;
-  document.querySelectorAll('.tab').forEach((b) => { const on = b.dataset.tab === t; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
-  if (NARROW.matches) window.scrollTo(0, 0);
+function focusProposal() {
+  if (NARROW.matches && currentRoute().name === 'new') { const h = $('h-prop'); if (h) h.scrollIntoView({ block: 'start' }); }
 }
 function syncSource() {
   if (state.attachments.length && $('source').value === '手入力') $('source').value = '書類（ファイル）';
@@ -294,10 +293,6 @@ async function chooseResident(m, rid) {
 const AUD = [['individual', '個別のみ', '選んだ職員にだけ届けます'], ['board', '全体共有のみ', '共有ボードに掲示します（個別配信なし）'], ['both', '両方', '個別配信＋共有ボード掲示']];
 function renderProposal() {
   const root = $('proposal'); const m = state.current;
-  if (state.sentNote) {
-    root.innerHTML = `<div class="ok-box" data-testid="sent-note">${esc(state.sentNote)}</div><p class="placeholder" style="margin-top:12px">次の連絡事項を入力してください。</p>`;
-    return;
-  }
   if (!m) { root.innerHTML = '<div class="placeholder" data-testid="proposal-empty">連絡事項を入力して「AIで解析する」を押すと、ここにAIの提案が表示されます。</div>'; return; }
   if (m.loading || m.status === 'analyzing') {
     root.innerHTML = '<div class="loading" data-testid="proposal-loading"><span class="spinner dark"></span>解析中…<small>Claudeが宛先と個別の本文を考えています（最大20秒ほど）</small></div>';
@@ -312,7 +307,7 @@ function renderProposal() {
     return;
   }
   if (m.status === 'sent') {
-    root.innerHTML = '<div class="ok-box">配信済みです。状況の一覧で確認状況を確認できます。</div>';
+    root.innerHTML = '<div class="ok-box">配信済みです。「配信管理」で確認状況を確認できます。</div>';
     return;
   }
   if (state.changing) { root.innerHTML = pickerHtml(m); bindPicker(m); return; }
@@ -427,14 +422,14 @@ async function sendMessage() {
     const payload = rs.map(({ checked, ...r }) => r);
     const board_post = p.useBoard ? { title: state.board.title.trim(), body: state.board.body.trim(), until: fromLocalInput(state.board.until) } : null;
     await api(`/api/messages/${encodeURIComponent(m.id)}/send`, { method: 'POST', body: { recipients: payload, board_post } });
-    const parts = [rs.length ? `${rs.length}名へ配信` : '', board_post ? '共有ボードに掲示' : ''].filter(Boolean).join('し、');
-    state.sentNote = `${parts}しました。状況の一覧で確認状況をご覧ください。`;
     state.current = null; state.recips = [];
     $('raw-text').value = ''; $('source').value = '手入力';
     state.attachments = []; renderChips();
     state.extract = null; renderIntake();
     toast(board_post && !rs.length ? '共有ボードに掲示しました' : '配信しました', 'ok');
-    renderProposal(); pollOnce(); setTab('status');
+    renderProposal();
+    await pollOnce();
+    location.hash = '#/deliveries/' + encodeURIComponent(m.id);
   } catch (e) { toast('配信に失敗しました: ' + e.message); renderProposal(); }
 }
 async function reanalyze() {
@@ -445,56 +440,166 @@ async function reanalyze() {
   finally { setBusy(false); }
 }
 
-// ---------- sent list / stats ----------
-function renderStats(s) {
-  $('stats').innerHTML = [['連絡事項', s.messages, ''], ['配信', s.deliveries, ''], ['確認済み', s.acked, 'ok'], ['未確認', s.unacked, 'warn']]
-    .map(([l, v, c]) => `<div class="stat ${c}" data-testid="stat-${esc(l)}"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
+
+// ---------- icons / helpers for views ----------
+const ico = (id, cls = '') => `<svg class="ic ${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+const jstYmd = (d) => new Intl.DateTimeFormat('sv-SE', { timeZone: TZ }).format(d);
+function todayLabel() {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('ja-JP', { timeZone: TZ, year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short' }).formatToParts(new Date()).map((x) => [x.type, x.value]));
+  return `${p.year}年${p.month}月${p.day}日（${p.weekday}）`;
 }
-function boardBadge(b) {
-  if (!b) return '';
-  const live = !b.archived_at && (!b.until || parseDate(b.until) > new Date());
-  return live ? `<div><span class="pill pill-board" data-testid="board-badge">📌 共有ボード掲示中</span>${b.until ? `<span class="sent-time"> ${esc(fmtFull(b.until))} まで</span>` : ''}</div>`
-    : '<div><span class="pill pill-off" data-testid="board-badge-ended">共有ボード掲示終了</span></div>';
+function setHtml(el, html) { if (el && el.dataset.h !== html) { el.innerHTML = html; el.dataset.h = html; } }
+const byNewest = (a, b) => parseDate(b.created_at) - parseDate(a.created_at);
+const sentMessages = () => state.messages.filter((m) => m.status === 'sent').sort(byNewest);
+function todaysSent() { const t = jstYmd(new Date()); return sentMessages().filter((m) => jstYmd(parseDate(m.created_at)) === t); }
+function ackCount(m) { const ds = m.deliveries || []; return { total: ds.length, done: ds.filter((d) => d.acknowledged_at).length }; }
+function residentLabel(m) {
+  if (m.resident && m.resident.name) return `${m.resident.name}様`;
+  const t = (m.analysis && m.analysis.summary) || m.raw_text || '';
+  return t.length > 14 ? t.slice(0, 14) + '…' : t;
 }
-function renderSent(flashIds) {
-  const sent = state.messages.filter((m) => m.status === 'sent');
-  const root = $('sent-list');
-  if (!sent.length) { root.innerHTML = '<div class="placeholder" data-testid="sent-empty">まだ配信された連絡事項はありません。</div>'; return; }
-  root.innerHTML = sent.map((m) => {
-    const ds = m.deliveries || []; const done = ds.filter((d) => d.acknowledged_at).length;
-    const pct = ds.length ? Math.round(done / ds.length * 100) : 0;
-    return `<article class="sent ${ds.length && done === ds.length ? 'all-done' : ''}" data-testid="sent-message" data-id="${esc(m.id)}">
-      <p class="sent-summary sent-sum">${esc(m.analysis ? m.analysis.summary : m.raw_text)}</p>
-      <div class="sent-time">${esc(fmtFull(m.created_at))} ／ ${esc(m.created_by)}</div>
-      ${boardBadge(m.board_post)}
-      <div class="prog" ${ds.length ? '' : 'hidden'}><b data-testid="progress-text">確認 ${done} / ${ds.length}</b><div class="bar"><div style="width:${pct}%"></div></div></div>
-      ${ds.map((d) => `<div class="drow ${flashIds.has(d.id) ? 'flash' : ''}" data-testid="delivery-row" data-delivery-id="${esc(d.id)}" data-acked="${d.acknowledged_at ? '1' : '0'}">
-        <span><span class="dname">${esc(d.staff_name)}</span><span class="drole">${esc(d.staff_role)}</span></span>
-        ${d.acknowledged_at ? `<span class="pill pill-ok" data-testid="pill-ack">✅ 確認済み ${esc(fmtTime(d.acknowledged_at))}</span>` : '<span class="pill pill-wait" data-testid="pill-wait">⏳ 未確認</span>'}
-      </div>`).join('')}
-    </article>`;
-  }).join('');
+function categoryOf(m) { const a = m.analysis; return (a && a.categories && a.categories[0]) || ((a && a.summary) || m.raw_text || '').slice(0, 14); }
+const clip = (t, n) => { t = String(t || ''); return t.length > n ? t.slice(0, n) + '…' : t; };
+
+// ---------- home ----------
+function renderHome() {
+  const list = todaysSent();
+  let total = 0, done = 0;
+  list.forEach((m) => { const c = ackCount(m); total += c.total; done += c.done; });
+  setHtml($('home-stats'), [['sent', 'check', '配信', total, ''], ['unacked', 'alert', '未確認', total - done, 'warn'], ['acked', 'check-o', '確認完了', done, 'ok']]
+    .map(([k, ic, l, v, c]) => `<div class="hstat ${c}" data-testid="home-stat-${k}">${ico(ic)}<span class="hs-l">${l}</span><b>${esc(v)}</b><span class="hs-u">件</span></div>`).join(''));
+  setHtml($('home-rows'), list.length ? list.map((m) => {
+    const { total: t, done: d } = ackCount(m);
+    const un = t - d;
+    const st = !t ? `<span class="ack ack-off">${ico('pin')}ボード掲示のみ</span>`
+      : un > 0 ? `<span class="ack ack-wait" data-testid="home-row-status">${ico('alert')}未確認 ${un}名</span>`
+      : `<span class="ack ack-ok" data-testid="home-row-status">${ico('check')}確認済み ${d}/${t}</span>`;
+    return `<div class="home-row ${un > 0 ? 'is-wait' : ''}" data-testid="home-row" data-id="${esc(m.id)}">
+      <i class="bar-l" aria-hidden="true"></i>
+      <span class="hr-name">${esc(residentLabel(m))}</span>
+      <span class="hr-sum"><b>${esc(categoryOf(m))}</b><span>${esc(clip(m.analysis && m.analysis.summary, 40))}</span></span>
+      ${st}
+      <a class="hr-link" href="#/deliveries/${encodeURIComponent(m.id)}" data-testid="home-row-link">配信状況を見る${ico('chev')}</a>
+    </div>`;
+  }).join('') : '<div class="placeholder" data-testid="home-empty">本日配信した連絡はまだありません。「新しい連絡を作成」から始めましょう。</div>');
 }
+
+// ---------- deliveries ----------
+function listItemHtml(m, selId) {
+  const { total: t, done: d } = ackCount(m);
+  const urg = (m.analysis && m.analysis.urgency) || 'low';
+  const on = m.id === selId;
+  return `<a class="dl-item ${on ? 'on' : ''} ${t && d < t ? 'is-wait' : ''}" href="#/deliveries/${encodeURIComponent(m.id)}" data-testid="dl-list-item" data-id="${esc(m.id)}" data-urgency="${esc(urg)}" ${on ? 'aria-current="true"' : ''}>
+    <i class="urg-bar urg-bar-${esc(urg)}" aria-hidden="true"></i>
+    <span class="dl-main"><b>${esc(residentLabel(m))}</b><span>${esc(clip(categoryOf(m), 18))}</span></span>
+    <span class="dl-count" data-testid="dl-count">${t ? `${d}/${t}` : '掲示'}</span>${ico('chev', 'dl-chev')}
+  </a>`;
+}
+const STEPS = ['情報を受信', 'AIが通知先を提案', '職員が承認', '確認完了'];
+function detailHtml(m, flashIds) {
+  const a = m.analysis || {};
+  const ds = m.deliveries || [];
+  const { total, done } = ackCount(m);
+  const all = total === 0 || done === total;
+  const reasonOf = (d) => { const r = (a.recipients || []).find((x) => x.staff_id === d.staff_id); return (r && r.reason) || d.reason || ''; };
+  const stepsDone = [true, true, true, all];
+  const title = m.resident && m.resident.name ? `${esc(m.resident.name)}様<i class="tsep" aria-hidden="true"></i>${esc(clip(a.summary, 30))}` : esc(clip(a.summary || m.raw_text, 40));
+  const excl = a.excluded || [];
+  const bp = m.board_post;
+  const live = bp && !bp.archived_at && (!bp.until || parseDate(bp.until) > new Date());
+  return `<div data-testid="sent-message" data-id="${esc(m.id)}" data-all-acked="${all ? '1' : '0'}">
+    <a class="dl-back" href="#/deliveries" data-testid="dl-back">${ico('chev-l')}一覧に戻る</a>
+    <h2 class="dl-title" data-testid="dl-title">${title}</h2>
+    <p class="dl-meta">${esc(fmtFull(m.created_at))} ／ 入力者 ${esc(m.created_by)}${a.urgency ? ` <span class="urg urg-${esc(a.urgency)}">${esc(URG[a.urgency] || a.urgency)}</span>` : ''}</p>
+    <div class="ai-sum"><span class="ai-lab">AI 要約</span><div><p data-testid="dl-summary">${esc(a.summary || m.raw_text)}</p><small>情報の出所： ${esc(m.source || '—')}</small></div></div>
+    <ol class="prog-steps" data-testid="dl-steps">${STEPS.map((s, i) => `<li class="${stepsDone[i] ? 'done' : ''}" data-testid="dl-step" data-done="${stepsDone[i] ? '1' : '0'}"><span class="dot">${stepsDone[i] ? ico('check') : ''}</span><span>${s}</span></li>`).join('')}</ol>
+    <h3 class="sec-h"><i aria-hidden="true"></i>通知先と確認状況<span class="prog-t" data-testid="progress-text" ${total ? '' : 'hidden'}>確認 ${done} / ${total}</span></h3>
+    ${total ? `<table class="rtable" data-testid="dl-table"><thead><tr><th>通知先（役割）</th><th>担当者</th><th>AIによる通知理由</th><th>確認状況</th></tr></thead><tbody>
+      ${ds.map((d) => `<tr data-testid="dl-recipient-row" class="${flashIds.has(d.id) ? 'flash' : ''}">
+        <td data-label="通知先（役割）"><b data-testid="delivery-row" data-delivery-id="${esc(d.id)}" data-acked="${d.acknowledged_at ? '1' : '0'}">${esc(d.staff_role)}</b></td>
+        <td data-label="担当者">${esc(d.staff_name)}</td>
+        <td data-label="AIによる通知理由" class="rs" data-testid="dl-reason">${esc(reasonOf(d) || '—')}</td>
+        <td data-label="確認状況">${d.acknowledged_at ? `<span class="ack ack-ok" data-testid="pill-ack">${ico('check')}確認済 ${esc(fmtTime(d.acknowledged_at))}</span>` : `<span class="ack ack-wait" data-testid="pill-wait">${ico('alert')}未確認</span>`}</td>
+      </tr>`).join('')}</tbody></table>` : '<p class="hint" data-testid="dl-no-individual">個別配信はありません（共有ボードのみ）。</p>'}
+    ${bp ? `<div class="board-line">${ico('pin')}<span class="bl-l">共有ボード</span><b>${esc(bp.title)}</b>${live ? `<span class="pill pill-board" data-testid="board-badge">掲示中</span>${bp.until ? `<small>${esc(fmtFull(bp.until))} まで</small>` : ''}` : '<span class="pill pill-off" data-testid="board-badge-ended">掲示終了</span>'}</div>` : ''}
+    <h3 class="sec-h"><i aria-hidden="true"></i>AIによる選定理由</h3>
+    <p class="sel-note" data-testid="dl-selection">${esc(a.excluded_note || '—')}</p>
+    ${excl.length ? `<details class="excl-d" data-testid="excluded-details" ${state.exclOpen ? 'open' : ''}><summary>送らなかった職員と理由（${excl.length}名）</summary>
+      <ul class="excl" data-testid="dl-excluded">${excl.map((x) => { const s = staffLine(x.staff_id); return `<li><b>${esc(s.name)}</b>${s.role ? `<span class="role">${esc(s.role)}</span>` : ''}<span class="excl-why">${esc(x.reason)}</span></li>`; }).join('')}</ul></details>` : ''}
+  </div>`;
+}
+function renderDeliveries(flashIds = new Set()) {
+  const r = currentRoute();
+  const all = sentMessages();
+  const list = state.dlAll ? all : todaysSent();
+  $('dl-today').setAttribute('aria-pressed', String(!state.dlAll)); $('dl-all').setAttribute('aria-pressed', String(state.dlAll));
+  $('h-dl').textContent = state.dlAll ? 'すべての連絡' : '今日の連絡';
+  $('dl-lead').textContent = state.dlAll ? '配信済みの連絡の一覧です。' : '本日受信した連絡の一覧です。';
+  let sel = r.id ? all.find((m) => m.id === r.id) : null;
+  if (!sel && !r.id && !NARROW.matches) sel = list[0] || null;
+  $('dl-wrap').classList.toggle('has-sel', !!r.id);
+  setHtml($('dl-list'), list.length ? list.map((m) => listItemHtml(m, sel && sel.id)).join('')
+    : `<div class="placeholder" data-testid="sent-empty">${state.dlAll ? 'まだ配信された連絡事項はありません。' : '本日配信した連絡はありません。「すべて」で過去の連絡を表示できます。'}</div>`);
+  const d = $('dl-detail');
+  if (sel) setHtml(d, detailHtml(sel, flashIds));
+  else setHtml(d, r.id ? `<a class="dl-back" href="#/deliveries">${ico('chev-l')}一覧に戻る</a><div class="placeholder" data-testid="dl-notfound">この連絡は見つかりません。</div>` : '<div class="placeholder" data-testid="dl-empty">左の一覧から連絡を選ぶと、通知先と確認状況を表示します。</div>');
+  const ex = d.querySelector('details.excl-d'); if (ex && !ex.dataset.bound) { ex.dataset.bound = '1'; ex.addEventListener('toggle', () => { state.exclOpen = ex.open; }); }
+}
+
+// ---------- router ----------
+function currentRoute() {
+  const h = (location.hash || '').replace(/^#\/?/, '');
+  const [name, ...rest] = h.split('/');
+  if (name === 'new') return { name: 'new' };
+  if (name === 'deliveries') return { name: 'deliveries', id: rest.length ? decodeURIComponent(rest.join('/')) : null };
+  return { name: 'home' };
+}
+let lastRouteKey = '';
+function route() {
+  const r = currentRoute();
+  document.body.dataset.route = r.name;
+  document.querySelectorAll('.view').forEach((v) => { v.hidden = v.dataset.view !== r.name; });
+  document.querySelectorAll('.sidenav a[data-route], .tabbar a[data-route]').forEach((a) => {
+    const on = a.dataset.route === r.name; a.classList.toggle('on', on);
+    if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+  });
+  const key = r.name + '/' + (r.id || '');
+  if (key !== lastRouteKey) { lastRouteKey = key; window.scrollTo(0, 0); }
+  renderViews();
+  if (r.name === 'new' && state.pending === 'focus') $('raw-text').focus();
+  state.pending = null;
+}
+function renderViews(flashIds = new Set()) {
+  const r = currentRoute();
+  if (r.name === 'home') renderHome();
+  else if (r.name === 'deliveries') renderDeliveries(flashIds);
+}
+
 async function pollOnce() {
   try {
-    const [msgs, stats] = await Promise.all([api('/api/messages'), api('/api/stats')]);
+    const msgs = await api('/api/messages');
     state.messages = msgs;
     const acked = new Set(); msgs.forEach((m) => (m.deliveries || []).forEach((d) => d.acknowledged_at && acked.add(d.id)));
     const flash = new Set();
     if (state.ackedSeen) acked.forEach((id) => { if (!state.ackedSeen.has(id)) flash.add(id); });
     state.ackedSeen = acked;
-    renderStats(stats); renderSent(flash);
-    if (flash.size) setTimeout(() => {}, 0);
+    $('today-label').querySelector('span').textContent = todayLabel();
+    renderViews(flash);
   } catch { /* api() が接続表示を更新済み。ポーリングは静かに継続 */ }
 }
 
 // ---------- init ----------
 async function init() {
   $('msg-form').addEventListener('submit', submitMessage);
-  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
   $('file-input').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; intakeFile(f); });
   $('camera-input').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; intakeFile(f); });
-  setTab('input'); renderQuick(); renderProposal(); renderSent(new Set());
+  $('home-text').addEventListener('click', () => { state.pending = 'focus'; if (currentRoute().name === 'new') $('raw-text').focus(); });
+  $('home-file').addEventListener('click', () => { $('file-input').click(); });
+  $('dl-today').addEventListener('click', () => { state.dlAll = false; renderViews(); });
+  $('dl-all').addEventListener('click', () => { state.dlAll = true; renderViews(); });
+  window.addEventListener('hashchange', route);
+  $('today-label').querySelector('span').textContent = todayLabel();
+  renderQuick(); renderProposal(); route();
   loadHealth(); loadSamples();
   try { (await api('/api/staff')).forEach((s) => state.staff.set(s.id, s)); } catch (e) { toast('職員一覧を取得できません: ' + e.message); }
   setupCreatedBy();

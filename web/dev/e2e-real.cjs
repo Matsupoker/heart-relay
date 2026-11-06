@@ -30,8 +30,10 @@ async function main() {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(BASE + '/');
-  await page.waitForSelector('[data-testid="sample-0"]');
+  await page.waitForSelector('[data-testid="home-cta"]');
   await page.screenshot({ path: `${SHOTS}/01-home.png` });
+  await page.click('[data-testid="home-cta"]');
+  await page.waitForSelector('[data-testid="sample-0"]', { state: 'visible' });
 
   // --- シナリオ1: 固有氏名で確定 → 提案 → both → 送信 → ボード → ack ---
   const samples = await (await fetch(BASE + '/api/demo-messages')).json();
@@ -51,9 +53,9 @@ async function main() {
   await page.fill('[data-testid="board-title"]', '坂井様 15時帰宅（受診）');
   await page.fill('[data-testid="board-body"]', '本日は受診のため15時に帰宅。送迎コース2は前倒し。');
   await page.click('[data-testid="btn-send"]');
-  await page.waitForSelector('[data-testid="sent-note"]', { timeout: 10000 });
+  await page.waitForFunction(() => location.hash.startsWith('#/deliveries/'), null, { timeout: 10000 });
   await page.waitForSelector('[data-testid="board-badge"]', { timeout: 10000 });
-  check('S1 sent + board badge', true);
+  check('S1 sent + board badge on delivery detail', await page.isVisible('[data-testid="dl-detail"]') && (await page.textContent('[data-testid="board-badge"]')).includes('掲示中'));
   const board = await (await fetch(BASE + '/api/board')).json();
   check('S1 /api/board has post', board.length === 1 && board[0].resident_name === '坂井 夏子', JSON.stringify(board[0]).slice(0, 120));
   // ack by s07
@@ -75,6 +77,7 @@ async function main() {
   await bp.close();
 
   // --- シナリオ2: 姓のみ → needs_resident → 候補選択 ---
+  await page.click('[data-testid="nav-new"]');
   const s2 = samples.find((s) => /江口/.test(s.raw_text));
   await page.fill('[data-testid="raw-text"]', s2.raw_text);
   await page.click('[data-testid="submit-analyze"]');
@@ -112,8 +115,8 @@ async function main() {
 
   // --- シナリオ5: スマホ幅 ---
   const mp = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-  await mp.goto(BASE + '/');
-  await mp.waitForSelector('[data-testid="tab-input"]');
+  await mp.goto(BASE + '/#/new');
+  await mp.waitForSelector('[data-testid="raw-text"]', { state: 'visible' });
   const sw = await mp.evaluate(() => document.documentElement.scrollWidth);
   check('mobile no horizontal scroll', sw <= 390, String(sw));
   const s5 = samples.find((s) => /2号車|点検/.test(s.raw_text));
