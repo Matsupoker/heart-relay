@@ -458,7 +458,22 @@ function residentLabel(m) {
   const t = (m.analysis && m.analysis.summary) || m.raw_text || '';
   return t.length > 14 ? t.slice(0, 14) + '…' : t;
 }
-function categoryOf(m) { const a = m.analysis; return (a && a.categories && a.categories[0]) || ((a && a.summary) || m.raw_text || '').slice(0, 14); }
+// 要約が利用者名（空白・様/さん有無を許容）で始まる場合、その部分と直後の「の/は/が/、」を除く
+function stripName(m, text) {
+  text = String(text || '');
+  const name = m && m.resident && m.resident.name ? String(m.resident.name).replace(/[\s\u3000]+/g, '') : '';
+  if (!name) return text;
+  let i = 0, j = 0;
+  while (j < name.length) {
+    while (i < text.length && /[\s\u3000]/.test(text[i])) i++;
+    if (text[i] !== name[j]) return text;
+    i++; j++;
+  }
+  const rest = text.slice(i).replace(/^(様|さん)/, '').replace(/^[\s\u3000]*[のはが、]/, '').replace(/^[\s\u3000]+/, '');
+  return rest || text;
+}
+const summaryOf = (m) => stripName(m, m.analysis && m.analysis.summary);
+function categoryOf(m) { const a = m.analysis; return (a && a.categories && a.categories[0]) || (summaryOf(m) || m.raw_text || '').slice(0, 14); }
 const clip = (t, n) => { t = String(t || ''); return t.length > n ? t.slice(0, n) + '…' : t; };
 
 // ---------- home ----------
@@ -477,7 +492,7 @@ function renderHome() {
     return `<div class="home-row ${un > 0 ? 'is-wait' : ''}" data-testid="home-row" data-id="${esc(m.id)}">
       <i class="bar-l" aria-hidden="true"></i>
       <span class="hr-name">${esc(residentLabel(m))}</span>
-      <span class="hr-sum"><b>${esc(categoryOf(m))}</b><span>${esc(clip(m.analysis && m.analysis.summary, 40))}</span></span>
+      <span class="hr-sum"><b>${esc(categoryOf(m))}</b><span>${esc(clip(summaryOf(m), 40))}</span></span>
       ${st}
       <a class="hr-link" href="#/deliveries/${encodeURIComponent(m.id)}" data-testid="home-row-link">配信状況を見る${ico('chev')}</a>
     </div>`;
@@ -503,7 +518,7 @@ function detailHtml(m, flashIds) {
   const all = total === 0 || done === total;
   const reasonOf = (d) => { const r = (a.recipients || []).find((x) => x.staff_id === d.staff_id); return (r && r.reason) || d.reason || ''; };
   const stepsDone = [true, true, true, all];
-  const title = m.resident && m.resident.name ? `${esc(m.resident.name)}様<i class="tsep" aria-hidden="true"></i>${esc(clip(a.summary, 30))}` : esc(clip(a.summary || m.raw_text, 40));
+  const title = m.resident && m.resident.name ? `${esc(m.resident.name)}様<i class="tsep" aria-hidden="true"></i>${esc(clip(stripName(m, a.summary), 30))}` : esc(clip(a.summary || m.raw_text, 40));
   const excl = a.excluded || [];
   const bp = m.board_post;
   const live = bp && !bp.archived_at && (!bp.until || parseDate(bp.until) > new Date());
