@@ -148,6 +148,59 @@ const T = (id) => `[data-testid=${id}]`;
   await p.waitForSelector(`${T('toast')}`);
   check('(c) 非対応形式はエラー表示', (await p.locator(T('toast')).last().textContent()).includes('取り込みに失敗'));
 
+  // --- (c2) 取り込み失敗時の表示と再操作 ---
+  {
+    await p.fill(T('raw-text'), '入力済みの本文です');
+    await p.selectOption(T('source'), '電話');
+    await p.selectOption(T('created-by'), '田中 相談');
+    const keep = async (label) => check(`(c2) ${label}: 本文・情報源・入力者が保持`, (await p.inputValue(T('raw-text'))) === '入力済みの本文です' && (await p.inputValue(T('source'))) === '電話' && (await p.inputValue(T('created-by'))) === '田中 相談');
+    const lastToast = async () => (await p.locator(T('toast')).last().textContent()) || '';
+    const F = { name: 'retry.png', mimeType: 'image/png', buffer: PNG };
+    // 1. 通信失敗 → 同じファイルで再試行
+    await p.route('**/api/intake', (r) => r.abort());
+    await p.setInputFiles(T('file-input'), F);
+    await p.waitForSelector(T('toast'));
+    check('(c2) 通信失敗: 失敗表示', (await lastToast()).includes('取り込みに失敗しました'), await lastToast());
+    check('(c2) 通信失敗: 抽出パネルなし・読み取り中表示が消える', (await p.locator(T('extract-panel')).count()) === 0 && (await p.locator(T('intake-loading')).count()) === 0);
+    await keep('通信失敗');
+    check('(c2) 通信失敗: file-input の value が空（同じファイルを再選択可）', (await p.inputValue(T('file-input'))) === '');
+    await p.unroute('**/api/intake');
+    await p.setInputFiles(T('file-input'), F);   // 同じファイルをもう一度
+    await p.waitForSelector(T('extract-panel'));
+    check('(c2) 通信失敗: 同じファイルの再選択で抽出パネルが出る', (await p.textContent(T('extract-filename'))) === 'retry.png');
+    await keep('再試行成功');
+    await p.click(T('extract-discard'));
+    // 2/5. サーバーエラー・429・413・415 の文言
+    const cases = [
+      [500, { error: 'サーバー内部エラー（テスト）' }, '500'],
+      [429, { error: 'リクエストが多すぎます。しばらくしてからお試しください', code: 'rate_limited' }, '429'],
+      [413, { error: 'ファイルが大きすぎます（上限 10MB）', code: 'too_large' }, '413'],
+      [415, { error: '対応していないファイル形式です', code: 'unsupported' }, '415'],
+    ];
+    for (const [status, body, label] of cases) {
+      await p.route('**/api/intake', (r) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) }));
+      const n = await p.locator(T('toast')).count();
+      await p.setInputFiles(T('file-input'), F);
+      await p.waitForFunction((n) => document.querySelectorAll('[data-testid=toast]').length > n, n);
+      check(`(c2) ${label}: サーバーの error 文言を表示`, (await lastToast()).includes(body.error), await lastToast());
+      check(`(c2) ${label}: パネルなし・再選択可`, (await p.locator(T('extract-panel')).count()) === 0 && (await p.inputValue(T('file-input'))) === '');
+      await keep(label);
+      await p.unroute('**/api/intake');
+    }
+    // 4. 転記結果の修正が反映される
+    await p.setInputFiles(T('file-input'), F);
+    await p.waitForSelector(T('extract-panel'));
+    await p.fill(T('extract-text'), '修正後の転記テキスト（職員が訂正）');
+    await p.click(T('extract-apply'));
+    const rt = await p.inputValue(T('raw-text'));
+    check('(c2) 編集後の文字列が本文に入る', rt.includes('修正後の転記テキスト（職員が訂正）') && rt.startsWith('入力済みの本文です') && !rt.includes('FAX受信'), rt);
+    const [rq] = await Promise.all([p.waitForRequest((r) => r.url().endsWith('/api/messages') && r.method() === 'POST'), p.click(T('submit-analyze'))]);
+    const bq = JSON.parse(rq.postData());
+    check('(c2) POST /api/messages の raw_text に編集後内容・attachment_ids', bq.raw_text.includes('修正後の転記テキスト（職員が訂正）') && !bq.raw_text.includes('FAX受信') && Array.isArray(bq.attachment_ids) && bq.attachment_ids.length === 1, JSON.stringify(bq));
+    await p.waitForSelector(`${T('recipient-card')}, ${T('resident-candidate')}, ${T('resident-none')}`);
+    await p.goto(BASE + '#/new'); await p.waitForSelector(T('raw-text'), { state: 'visible' });
+  }
+
   // --- (d) audience=both で board_post 付き送信 ---
   await p.fill(T('raw-text'), '明日午前、送迎車2号車を点検に出します。全員に共有してください。');
   await p.click(T('submit-analyze'));
