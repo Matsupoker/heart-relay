@@ -418,3 +418,14 @@ body[data-route=deliveries] .sidenav .nav-badge{position:absolute;top:2px;right:
 @media (max-width:420px){
   .hero-cta{font-size:19px}
 }
+
+/* ---- 音声入力 ---- */
+.voice-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;font-size:16px}
+.voice-dot{width:10px;height:10px;border-radius:50%;background:var(--sub);display:inline-block}
+.voice-btn.rec{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.voice-btn.rec .voice-dot{background:var(--red);animation:voice-blink 1s ease-in-out infinite}
+@keyframes voice-blink{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.voice-btn.rec .voice-dot{animation:none}}
+.voice-status{margin-top:8px;font-size:16px;font-weight:600;color:var(--sub)}
+.voice-status.rec{color:var(--red)} .voice-status.err{color:var(--red)}
+.voice-interim{margin-top:6px;padding:8px 10px;font-size:16px;color:var(--sub);background:var(--line-2);border-radius:8px;border:1px dashed var(--line);word-break:break-word}

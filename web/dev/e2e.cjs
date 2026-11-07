@@ -345,6 +345,85 @@ const T = (id) => `[data-testid=${id}]`;
   check('(f) 横スクロールなし(履歴)', (await overflow()) <= 0, 'overflow=' + await overflow());
   await m.screenshot({ path: S + 'ui/corp-390.png', fullPage: true });
 
+  // --- 音声入力（偽 SpeechRecognition を注入。実マイクは使わない） ---
+  const FAKE = (mode) => `(() => {
+    const MODE = ${JSON.stringify(mode)};
+    if (MODE === 'none') { delete window.SpeechRecognition; delete window.webkitSpeechRecognition; return; }
+    class Fake {
+      constructor() { window.__fake = this; this.started = false; }
+      start() { this.started = true; window.__fakeStarts = (window.__fakeStarts || 0) + 1;
+        setTimeout(() => {
+          if (MODE === 'deny') { this.onerror && this.onerror({ error: 'not-allowed' }); this.onend && this.onend(); return; }
+          this.onstart && this.onstart();
+        }, 20); }
+      stop() { this.started = false; setTimeout(() => this.onend && this.onend(), 20); }
+      abort() { this.stop(); }
+      emit(list) { const rs = list.map(([t, f]) => { const a = [{ transcript: t, confidence: 0.9 }]; a.isFinal = f; return a; });
+        this.onresult && this.onresult({ resultIndex: 0, results: rs }); }
+    }
+    window.SpeechRecognition = Fake; window.webkitSpeechRecognition = undefined;
+  })();`;
+  const voiceCtx = async (mode, opt = {}) => {
+    const c = await b.newContext(opt); await c.addInitScript(FAKE(mode));
+    const pg = await c.newPage(); pg.on('pageerror', e => errs.push('voice: ' + e.message));
+    await pg.goto(BASE + '#/new'); await pg.waitForSelector(T('voice-toggle'), { state: 'visible' }); await pg.waitForTimeout(500);
+    return pg;
+  };
+  const FINAL = '飯島愛子さん来週火曜から入浴は午後に変更';
+  for (const [label, opt] of [['PC', { viewport: { width: 1440, height: 900 } }], ['スマホ', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }]]) {
+    const v = await voiceCtx('ok', opt);
+    check(`(voice ${label}) 初期は待機・ボタン有効`, (await v.textContent(T('voice-status'))).trim() === '待機' && !(await v.isDisabled(T('voice-toggle'))));
+    await v.fill(T('raw-text'), '既存の文章');
+    await v.click(T('voice-toggle')); await v.waitForFunction(() => document.querySelector('[data-testid=voice-status]').textContent.includes('録音中'));
+    check(`(voice ${label}) 録音中表示・ボタン状態`, (await v.textContent(T('voice-status'))).includes('マイクに向かって話してください') && (await v.getAttribute(T('voice-toggle'), 'aria-pressed')) === 'true' && await v.$eval(T('voice-toggle'), e => e.classList.contains('rec')));
+    check(`(voice ${label}) status は aria-live=polite`, (await v.getAttribute(T('voice-status'), 'aria-live')) === 'polite');
+    await v.evaluate(() => window.__fake.emit([['飯島愛子さん来週', false]]));
+    check(`(voice ${label}) 途中結果は voice-interim のみ（textarea に入らない）`, (await v.textContent(T('voice-interim'))).includes('飯島愛子さん来週') && (await v.inputValue(T('raw-text'))) === '既存の文章' && (await v.textContent(T('voice-status'))).includes('認識中'));
+    await v.screenshot({ path: S + `ui/voice-${label === 'PC' ? 1440 : 390}.png`, fullPage: label !== 'PC' });
+    await v.evaluate((t) => window.__fake.emit([[t, true]]), FINAL);
+    check(`(voice ${label}) 確定結果が textarea 末尾に追記`, (await v.inputValue(T('raw-text'))) === '既存の文章\n' + FINAL, JSON.stringify(await v.inputValue(T('raw-text'))));
+    check(`(voice ${label}) 途中結果表示は消える`, !(await v.isVisible(T('voice-interim'))));
+    if (label === 'スマホ') {
+      const sm = await v.evaluate(() => [...document.querySelectorAll('#voice-toggle,#voice-status,#voice-interim')].filter(e => e.offsetParent).map(e => ({ t: e.id, h: Math.round(e.getBoundingClientRect().height), f: parseFloat(getComputedStyle(e).fontSize) })));
+      check('(voice スマホ) ボタン44px以上・文字16px以上', sm.find(x => x.t === 'voice-toggle').h >= 44 && sm.every(x => x.f >= 16), JSON.stringify(sm));
+      check('(voice スマホ) 横スクロールなし', (await v.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)) <= 0);
+    }
+    await v.click(T('voice-toggle')); await v.waitForFunction(() => document.querySelector('[data-testid=voice-status]').textContent.trim() === '停止しました');
+    check(`(voice ${label}) 停止で「停止しました」・ボタンが待機に戻る`, (await v.getAttribute(T('voice-toggle'), 'aria-pressed')) === 'false');
+    check(`(voice ${label}) 停止直後に自動解析されていない`, (await v.locator(T('recipient-card')).count()) === 0 && (await v.locator(T('proposal-loading')).count()) === 0);
+    await v.fill(T('raw-text'), (await v.inputValue(T('raw-text'))) + '（確認済み）');
+    await v.click(T('submit-analyze')); await v.waitForSelector(T('recipient-card'), { timeout: 8000 });
+    check(`(voice ${label}) 人が編集→「AIで解析する」で従来どおり提案`, (await v.locator(T('recipient-card')).count()) > 0);
+    await v.context().close();
+  }
+  { // continuous が勝手に終了
+    const v = await voiceCtx('ok', { viewport: { width: 1366, height: 768 } });
+    await v.click(T('voice-toggle')); await v.waitForFunction(() => document.querySelector('[data-testid=voice-status]').textContent.includes('録音中'));
+    await v.evaluate(() => window.__fake.onend()); await v.waitForTimeout(100);
+    check('(voice) onend で「停止しました」・自動再開しない', (await v.textContent(T('voice-status'))).trim() === '停止しました' && (await v.evaluate(() => window.__fakeStarts)) === 1 && (await v.getAttribute(T('voice-toggle'), 'aria-pressed')) === 'false');
+    await v.click(T('voice-toggle')); await v.waitForFunction(() => document.querySelector('[data-testid=voice-status]').textContent.includes('録音中'));
+    await v.evaluate(() => { location.hash = '#/home'; }); await v.waitForTimeout(150);
+    check('(voice) 画面遷移で録音停止', (await v.evaluate(() => window.__fake.started)) === false);
+    await v.context().close();
+  }
+  { // マイク拒否
+    const v = await voiceCtx('deny', { viewport: { width: 1366, height: 768 } });
+    await v.click(T('voice-toggle')); await v.waitForFunction(() => document.querySelector('[data-testid=voice-status]').textContent.includes('エラー'));
+    const t = await v.textContent(T('voice-status'));
+    check('(voice) not-allowed: 拒否メッセージ', t.includes('マイクの使用が許可されていません。ブラウザの設定で許可するか、文章を入力してください'), t);
+    check('(voice) 拒否後もボタンは待機表示', (await v.getAttribute(T('voice-toggle'), 'aria-pressed')) === 'false');
+    await v.fill(T('raw-text'), '手入力で連絡します'); await v.click(T('submit-analyze')); await v.waitForSelector(T('recipient-card'), { timeout: 8000 });
+    check('(voice) 拒否後も手入力→解析できる', true);
+    await v.context().close();
+  }
+  { // API なし
+    const v = await voiceCtx('none', { viewport: { width: 1366, height: 768 } });
+    check('(voice) API なし: ボタン無効・案内文', await v.isDisabled(T('voice-toggle')) && (await v.textContent(T('voice-status'))).includes('このブラウザは音声入力に対応していません。文章を入力してください'));
+    await v.fill(T('raw-text'), '手入力で連絡します'); await v.click(T('submit-analyze')); await v.waitForSelector(T('recipient-card'), { timeout: 8000 });
+    check('(voice) API なしでも手入力→解析できる', true);
+    await v.context().close();
+  }
+
   console.log('errors', JSON.stringify(errs));
   check('JSエラーなし', errs.length === 0);
   console.log(fails ? `\n${fails} 件失敗` : '\nALL PASS');

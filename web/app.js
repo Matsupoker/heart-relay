@@ -430,6 +430,7 @@ async function sendMessage() {
     const board_post = p.useBoard ? { title: state.board.title.trim(), body: state.board.body.trim(), until: fromLocalInput(state.board.until) } : null;
     await api(`/api/messages/${encodeURIComponent(m.id)}/send`, { method: 'POST', body: { recipients: payload, board_post } });
     state.current = null; state.recips = [];
+    voiceStop();
     $('raw-text').value = ''; $('source').value = '手入力';
     state.attachments = []; renderChips();
     state.extract = null; renderIntake();
@@ -742,6 +743,7 @@ let lastRouteKey = '';
 function route() {
   const r = currentRoute();
   document.body.dataset.route = r.name;
+  if (r.name !== 'new') voiceStop();
   document.querySelectorAll('.view').forEach((v) => { v.hidden = v.dataset.view !== r.name; });
   document.querySelectorAll('.sidenav a[data-route], .tabbar a[data-route]').forEach((a) => {
     const on = a.dataset.route === r.name; a.classList.toggle('on', on);
@@ -775,6 +777,66 @@ async function pollOnce() {
   } catch { /* api() が接続表示を更新済み。ポーリングは静かに継続 */ }
 }
 
+// ---------- 音声入力（Web Speech API。録音ファイルは保存・送信しない） ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const voice = { rec: null, on: false };
+function voiceUI(kind, msg) {
+  const st = $('voice-status'), b = $('voice-toggle');
+  st.textContent = msg; st.className = 'voice-status' + (kind === 'rec' ? ' rec' : kind === 'err' ? ' err' : '');
+  const rec = kind === 'rec' || kind === 'busy';
+  b.classList.toggle('rec', rec); b.setAttribute('aria-pressed', rec ? 'true' : 'false');
+  $('voice-label').textContent = rec ? '停止する' : '音声で入力';
+  if (!rec) { $('voice-interim').hidden = true; $('voice-interim').textContent = ''; }
+}
+function voiceAppend(t) {
+  t = (t || '').trim(); if (!t) return;
+  const rt = $('raw-text'); const cur = rt.value;
+  rt.value = cur.trim() ? cur.replace(/\s+$/, '') + '\n' + t : t;
+  rt.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function voiceStop() { if (voice.rec && voice.on) { try { voice.rec.stop(); } catch { /* 既に停止 */ } } }
+const VOICE_ERR = {
+  'not-allowed': 'マイクの使用が許可されていません。ブラウザの設定で許可するか、文章を入力してください',
+  'service-not-allowed': 'マイクの使用が許可されていません。ブラウザの設定で許可するか、文章を入力してください',
+  'no-speech': '音声が検出されませんでした',
+  'network': '音声認識サービスに接続できません',
+};
+function voiceStart() {
+  const r = new SR();
+  r.lang = 'ja-JP'; r.interimResults = true; r.continuous = true;
+  let err = null;
+  r.onstart = () => { voice.on = true; voiceUI('rec', '録音中（マイクに向かって話してください）'); };
+  r.onresult = (ev) => {
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const res = ev.results[i];
+      if (res.isFinal) voiceAppend(res[0].transcript); else interim += res[0].transcript;
+    }
+    const el = $('voice-interim');
+    el.textContent = interim ? '認識中… ' + interim : ''; el.hidden = !interim;
+    if (interim) { $('voice-status').textContent = '認識中…'; }
+    else if (voice.on) { $('voice-status').textContent = '録音中（マイクに向かって話してください）'; }
+  };
+  r.onerror = (ev) => { err = (ev && ev.error) || 'unknown'; if (err === 'aborted') return; voice.on = false; voiceUI('err', 'エラー: ' + (VOICE_ERR[err] || '音声認識に失敗しました（' + err + '）')); };
+  r.onend = () => {
+    voice.on = false; if (voice.rec === r) voice.rec = null;
+    if (err && err !== 'aborted') { voiceUI('err', $('voice-status').textContent); $('voice-status').className = 'voice-status err'; }
+    else voiceUI('idle', '停止しました');
+  };
+  voice.rec = r; voice.on = true;
+  try { r.start(); } catch (e) { voice.on = false; voice.rec = null; voiceUI('err', 'エラー: ' + e.message); }
+}
+function voiceToggle() { if (voice.on) { voiceStop(); } else { voiceStart(); } }
+function voiceInit() {
+  const b = $('voice-toggle');
+  if (!SR) {
+    b.disabled = true;
+    const st = $('voice-status'); st.textContent = 'このブラウザは音声入力に対応していません。文章を入力してください'; st.className = 'voice-status';
+    return;
+  }
+  b.addEventListener('click', voiceToggle);
+}
+
 // ---------- init ----------
 async function init() {
   $('msg-form').addEventListener('submit', submitMessage);
@@ -791,6 +853,7 @@ async function init() {
   $('corp-draft').addEventListener('click', corpDraft);
   $('corp-source').addEventListener('change', corpPickSource);
   $('corp-inbox').addEventListener('click', corpAckClick);
+  voiceInit();
   renderQuick(); renderProposal(); route();
   loadHealth(); loadSamples();
   await loadOffices();

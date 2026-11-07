@@ -105,7 +105,10 @@
                 <label class="btn file-btn camera-btn">カメラで撮影
                   <input type="file" class="sr-only" id="camera-input" data-testid="camera-input" accept="image/*" capture="environment">
                 </label>
+                <button type="button" class="btn voice-btn" id="voice-toggle" data-testid="voice-toggle" aria-pressed="false"><i class="voice-dot" aria-hidden="true"></i><span id="voice-label">音声で入力</span></button>
               </div>
+              <div id="voice-status" class="voice-status" data-testid="voice-status" aria-live="polite">待機</div>
+              <div id="voice-interim" class="voice-interim" data-testid="voice-interim" aria-live="off" hidden></div>
               <div id="intake-status" data-testid="intake-status" aria-live="polite"></div>
               <div id="extract-area"></div>
               <div id="chips" class="att-chips" data-testid="attachment-chips"></div>
