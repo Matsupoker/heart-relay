@@ -58,10 +58,12 @@ def need(nid, video_len, pad=0.6):  # ナレーションに合わせて末尾に
 
 # k1..k5 紙芝居（実体験の匿名再現）
 KAMI = {'k1': 'kami/scene1-routine.png', 'k2': 'kami/scene2-phone-call.png', 'k3': 'kami/scene3-arrival-late.png', 'k4': 'kami/scene4-paper-was-there.png', 'k5': 'kami/scene5-back-to-care.png'}
+# 00 オープニングタイトル（オーナー作成画像、無音 4 秒）
+still_seg('slide_title_owner.png', 4.0, f'{SEG}/00.mp4'); add('00', f'{SEG}/00.mp4')
 for k, png in KAMI.items():
-    kb_seg(png, nar_len(k) + 0.7, f'{SEG}/{k}.mp4'); add(k, f'{SEG}/{k}.mp4')
+    kb_seg(png, nar_len(k) + 0.5, f'{SEG}/{k}.mp4'); add(k, f'{SEG}/{k}.mp4')
 # 01 タイトル（ここから架空データの実演、と宣言）
-still_seg('slide_title_owner.png', nar_len('01') + 0.7, f'{SEG}/01.mp4'); add('01', f'{SEG}/01.mp4')
+still_seg('slide_title.png', nar_len('01') + 0.5, f'{SEG}/01.mp4'); add('01', f'{SEG}/01.mp4')
 # 03 FAX 取り込み→転記→追記→反映→解析ボタン
 v = 16.5 - 4.2; pc_seg(S1, 4.2, 16.5, f'{SEG}/03.mp4', hold=need('03', v)); add('03', f'{SEG}/03.mp4')
 # 04 解析結果（待ち省略）
@@ -83,7 +85,7 @@ split_seg(PX, PX_IN, PX_OUT, ACK, pc_in, f'{SEG}/08.mp4', total=max(PX_OUT - PX_
 pc_seg(CORP, 0.2, 12.0, f'{SEG}/09a.mp4', slow=0.7); add('09a', f'{SEG}/09a.mp4')
 pc_seg(CORP, 18.0, 41.2, f'{SEG}/09b.mp4', slow=0.45, hold=0.4); add('09b', f'{SEG}/09b.mp4')
 # 10 まとめ
-still_seg('slide_end.png', nar_len('10') + 0.8, f'{SEG}/10.mp4'); add('10', f'{SEG}/10.mp4')
+still_seg('slide_end.png', nar_len('10') + 0.6, f'{SEG}/10.mp4'); add('10', f'{SEG}/10.mp4')
 
 with open(f'{SEG}/list.txt', 'w') as f:
     for _, p in cuts: f.write(f"file '{os.path.abspath(p)}'\n")
