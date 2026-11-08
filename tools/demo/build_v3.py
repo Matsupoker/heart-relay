@@ -61,7 +61,7 @@ KAMI = {'k1': 'kami/scene1-routine.png', 'k2': 'kami/scene2-phone-call.png', 'k3
 for k, png in KAMI.items():
     kb_seg(png, nar_len(k) + 0.7, f'{SEG}/{k}.mp4'); add(k, f'{SEG}/{k}.mp4')
 # 01 タイトル（ここから架空データの実演、と宣言）
-still_seg('slide_title.png', nar_len('01') + 0.7, f'{SEG}/01.mp4'); add('01', f'{SEG}/01.mp4')
+still_seg('slide_title_owner.png', nar_len('01') + 0.7, f'{SEG}/01.mp4'); add('01', f'{SEG}/01.mp4')
 # 03 FAX 取り込み→転記→追記→反映→解析ボタン
 v = 16.5 - 4.2; pc_seg(S1, 4.2, 16.5, f'{SEG}/03.mp4', hold=need('03', v)); add('03', f'{SEG}/03.mp4')
 # 04 解析結果（待ち省略）
