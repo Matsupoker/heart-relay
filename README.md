@@ -13,7 +13,7 @@ HEART RELAYは、介護・医療現場における情報伝達の問題に向き
 ## デモ動画（Built with Claude: Japan 2026）
 
 - 動画 URL: （提出時に記入）
-- 台本: [docs/demo/台本_v2.md](docs/demo/台本_v2.md)（[v1](docs/demo/台本_v1.md)） ／ 制作記録: [docs/reports/動画制作_2026-11-08.md](docs/reports/動画制作_2026-11-08.md)
+- 台本: [docs/demo/台本_v3.md](docs/demo/台本_v3.md)（[v2](docs/demo/台本_v2.md)／[v1](docs/demo/台本_v1.md)） ／ 制作記録: [docs/reports/動画制作_2026-11-08.md](docs/reports/動画制作_2026-11-08.md)
 - 動画に登場する利用者・職員・事業所はすべて架空のデータです。
 
 ## 1. なぜHEART RELAYを作るのか
