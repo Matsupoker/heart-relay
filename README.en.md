@@ -1,4 +1,4 @@
-# HEART RELAY (Working Title)
+# HEART RELAY
 
 [日本語](README.md) | [English](README.en.md)
 
@@ -8,11 +8,24 @@
 
 HEART RELAY explores how AI might help address communication problems in care and healthcare workplaces.
 
-This public repository contains a new experimental prototype being developed for **Built with Claude: Japan 2026**.
+This public repository contains an experimental prototype developed for **Built with Claude: Japan 2026**, submitted on **November 8, 2026**. It is not a production-ready system for use with real patient or staff data.
+
+## Demo (Built with Claude: Japan 2026)
+
+- **[Watch the v3 demo (YouTube, under 3 minutes)](https://youtu.be/3FyNFSp07fU)**
+- Submitted: **November 8, 2026** · Theme: **“The Depth Only You Can Bring”** (「あなたにしかない深さを」) · Team: **Team HEART RELAY**
+- [v3 video script (Japanese)](docs/demo/台本_v3.md) · [Production report (Japanese)](docs/reports/動画制作_2026-11-08.md)
+- **The opening illustrated story is an anonymized reconstruction of the developer's real experience.** All people, workplaces, and messages used in the software demonstration are fictional.
 
 ## 1. Why HEART RELAY Exists
 
-The developer of this project works in frontline care and healthcare.
+The developer works on the frontline of day care for older adults.
+
+The project began with a real incident during a return-home shuttle trip. The driver learned by phone—while already on the route—that a passenger needed to be home for a scheduled medical visit. Despite changing the route, the vehicle arrived late, and the driver faced complaints. Back at the facility, the relevant paper notice was found: **the information existed, but it had never reached the person organizing the transportation.**
+
+In another incident, a medication change was recorded but not adequately communicated to the nurse responsible. Another experienced staff member noticed the discrepancy before an incorrect medication could be given.
+
+In smaller care workplaces, the people handling communications are often also caring for residents. HEART RELAY aims to let Claude prepare the message and suggest recipients, while staff quickly review, correct, and approve it before returning to care. **The goal is not just efficiency: it is to reduce the emotional toll on frontline workers when preventable communication gaps lead to complaints or blame.**
 
 Every day, workplaces face a range of challenges: complaints from people receiving care and their families, misunderstandings among staff, and concerns or criticism from supervisors and organizational leadership. Not all of these problems are caused by communication failures. But through firsthand experience, the developer has come to believe that many share a common factor: **information that needs to reach someone does not reach the right person, at the right time, in a usable form.**
 
@@ -59,24 +72,23 @@ HEART RELAY envisions a way to bring these communications together, organize the
 
 Broadcasting every message to everyone can bury what matters most. The goal is not to generate more messages, but to make sure **the right information arrives and its receipt can be confirmed.**
 
-## 4. Initial Prototype Goal
+## 4. Implemented and Tested in the Hackathon (as of November 8, 2026)
 
-For the hackathon, the first milestone is to connect these components in a working end-to-end demonstration:
+The prototype demonstrates an end-to-end flow using fictional data and a physical Pixel 10a: **enter a message on the PC → Claude proposes content and recipients → a staff member reviews and approves → Android receives and acknowledges → the PC shows the acknowledgement.**
 
-- **PC application:** Enter communications and view acknowledgement status. A web app or desktop app is under consideration.
-- **Backend:** Store and route messages, connect to the Claude API, and track notifications and acknowledgements.
-- **Claude API:** Analyze and categorize fictional communications and prepare relevant content for recipients.
-- **Android application:** Built with an SDK and installed on at least one physical smartphone, allowing staff-specific messages to be viewed and acknowledged.
+- **Input:** Text via PC or mobile web; Claude-assisted extraction from images, photos, and PDFs with human correction; local text extraction from TXT/DOCX/XLS/XLSX; browser-based speech recognition.
+- **AI-assisted preparation:** Summaries, categories, urgency, recommended actions, audience suggestions, and explanations for excluded recipients. The demo uses a fictional registry of 200 care recipients and staff responsibility data. Ambiguous identities require human selection.
+- **Human control:** A person checks and edits the source text, identity, recipients, and message, then explicitly approves delivery. Claude does **not** send messages autonomously.
+- **Acknowledgement tracking:** Staff read messages in the Android app and tap “Acknowledged”; the PC displays who acknowledged and when.
+- **Shared notice board:** A browser display for general floor announcements.
+- **Cross-office communication (prototype):** Three fictional offices demonstrate assisted drafting, human-initiated sending, and acknowledgement tracking. Production-grade authentication and authorization are **not implemented**.
 
-The minimum demonstration flow is:
+**Verified:** End-to-end delivery and acknowledgement with the real Claude API, PC web interface, and physical Android device. The Android app also connected directly to the PC over Wi-Fi without ADB.
 
-1. Enter a fictional communication on the PC.
-2. Have the backend request analysis from the Claude API.
-3. Route the result to the appropriate fictional staff member based on its content and assigned responsibilities.
-4. Display the message on Android and have the recipient tap “Acknowledged.”
-5. Store the acknowledgement in the backend and reflect its status on the PC.
+**Known limits:** Direct access from Pixel Chrome to the PC over LAN remained unreliable for unknown reasons; the mobile-web test used ADB reverse. Background push delivery, real-world access controls, and production use with personal data are not implemented.
 
-The backend's deployment location (for example, on a PC or in the cloud) and communication protocols will be selected through testing. **Completing a local LLM is not a requirement for this first milestone; the priority is to demonstrate the complete information-delivery loop.**
+- [Device and integration test report (Japanese)](docs/reports/実機検証_UI刷新_Issue2_2026-11-07.md)
+- [Setup instructions (Japanese)](docs/起動手順.md)
 
 ## 5. A Longer-Term Vision: On-Premises Local LLMs
 
@@ -92,7 +104,7 @@ However, **a local LLM alone does not guarantee privacy, security, or legal comp
 
 HEART RELAY is an **experimental hackathon prototype** intended to explore AI-assisted information collection, decision support, and targeted communication in care and healthcare settings.
 
-Because development and testing use external AI services such as Anthropic's Claude, **all names, profiles, schedules, and messages concerning people receiving care or staff members will be entirely fictional simulation data. Real personal information about care recipients or employees will not be used, submitted to external AI services, or published in this repository.**
+The motivation comes from real experiences, but **all names, profiles, schedules, facilities, and messages in the prototype and its software demonstration are fictional simulation data**. External AI testing uses only this fictional data. Real personal information about care recipients or employees is not used, submitted to external AI services, or published in this repository.
 
 Before any future use in a real workplace, the project would need to examine the purposes of data use, how service providers handle information, relevant laws, contracts, and facility policies. It would also require appropriate approvals and technical and organizational safeguards. Japanese personal information protection law does not categorically ban the use of external AI; compliance depends on the specific way information is handled.
 
@@ -108,13 +120,25 @@ Even so, the project hopes to demonstrate one direction worth exploring: reducin
 
 HEART RELAY is one attempt to explore that question.
 
-## 8. Screen Layout (UI refresh, 2026-11-07)
+## 8. Repository and Screen Layout (November 8, 2026 submission)
+
+- `backend/`: Node.js, Express, SQLite, and Claude API integration
+- `web/`: Static single-page web application and shared board
+- `android/`: Kotlin / Jetpack Compose staff-facing acknowledgement app
+- `fixtures/`: Fictional registry of 200 care recipients
+- `docs/`: API, setup, design, tests, and demo scripts
+- `tools/`: Demo recording and video-editing scripts
+
+[API contract](docs/api.md) · [Setup instructions (Japanese)](docs/起動手順.md)
+
+### Screen layout (UI refresh, November 7, 2026)
 
 The PC screen is a single page (`web/index.html`) that switches views by hash routing:
 
 - `#/home` Home: today's delivery, unacknowledged, and acknowledged counts, plus today's messages
 - `#/new` New message: enter, review the AI proposal, approve
 - `#/deliveries` and `#/deliveries/<id>` Delivery management: list and detail (acknowledgement status per staff member, AI selection rationale)
+- `#/corp` Cross-office communication: assisted drafts, manual sending, acknowledgement status (fictional offices)
 - Shared board `board.html`: opens in a new tab
 
 Design record (in Japanese, including intentional differences from the approved mock): [docs/plan/UI刷新_2026-11-07.md](docs/plan/UI刷新_2026-11-07.md)
